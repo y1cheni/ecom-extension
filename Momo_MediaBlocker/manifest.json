@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "Momo_MediaBlocker",
+    "version": "1.0",
+    "description": "Block image and video resources in expertimg directory from img1~img4 domains on Momoshop platform to speed up page loading, keeping other pages normal.",
+    "permissions": ["declarativeNetRequest"],
+    "host_permissions": ["*://*.momoshop.com.tw/*"],
+    "declarative_net_request": {
+      "rule_resources": [{
+        "id": "block_resources",
+        "enabled": true,
+        "path": "rules.json"
+      }]
+    }
+  }
+  

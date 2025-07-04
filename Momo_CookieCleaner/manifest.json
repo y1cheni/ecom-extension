@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "Momo_CookieCleaner",
+    "version": "1.1",
+    "description": "Automatically clean cookies when the number exceeds the specified limit while browsing momo website, with status interface.",
+    "permissions": [
+      "cookies",
+      "tabs",
+      "storage"
+    ],
+    "host_permissions": [
+      "*://*.momoshop.com.tw/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Momo_CookieCleaner"
+    }
+  }
+  

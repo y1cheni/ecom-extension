@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Momo_sales_stock",
+  "version": "1.0",
+  "description": "Momo sales stock tracker and price mapper",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "https://www.momoshop.com.tw/*",
+    "https://shopee.tw/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Momo_sales_stock"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.momoshop.com.tw/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["debug.js"],
+      "matches": ["https://www.momoshop.com.tw/*"]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Open extension popup"
+    },
+    "open_price_tracker": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T",
+        "mac": "Command+Shift+T"
+      },
+      "description": "Open price tracker"
+    }
+  }
+}
+    

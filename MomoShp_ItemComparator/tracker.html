@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Product Price Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      table-layout: fixed;
+    }
+    
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .button-group {
+      margin: 20px 0;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    .export-area {
+      margin: 20px 0;
+      display: none;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    .input-area {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f8f8f8;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .input-area textarea {
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    
+    .no-data {
+      color: #999;
+      font-style: italic;
+    }
+    
+    #statusMessage {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .auto-open-area {
+      margin: 20px 0;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #d0e0ff;
+    }
+    
+    .momo-section {
+      background-color: #f0f7ff;
+    }
+    
+    .shopee-section {
+      background-color: #fff0f5;
+    }
+    
+    .auto-open-area input {
+      padding: 5px;
+      margin-right: 10px;
+      width: 60px;
+    }
+    
+    .stop-btn {
+      background-color: #f44336;
+      display: none;
+    }
+    
+    .stop-btn:hover {
+      background-color: #d32f2f;
+    }
+    
+    .progress-info {
+      margin-top: 10px;
+      color: #0066cc;
+      display: none;
+    }
+    
+    .current-url {
+      margin-top: 5px;
+      font-size: 0.9em;
+      color: #666;
+      word-break: break-all;
+      display: none;
+    }
+    
+    .momo-column {
+      background-color: #f0f8ff;
+    }
+    
+    .shopee-column {
+      background-color: #fff0f5;
+    }
+    
+    .platform-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+    
+    .match-column {
+      background-color: #f0fff0;
+      text-align: center;
+    }
+    .match-yes {
+      background-color: #e0ffe0;
+      color: #008800;
+      font-weight: bold;
+    }
+    .match-no {
+      background-color: #fff0f0;
+      color: #880000;
+    }
+    .match-na {
+      background-color: #f0f0f0;
+      color: #888888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Product Price Tracker</h1>
+    
+    <!-- MOMO Section -->
+    <div class="input-area">
+      <div class="platform-title">MOMO Shopping</div>
+      <h3>Enter MOMO Product TID List</h3>
+      <p>Enter one TID per line to set display order. TIDs are the numbers after i_code= in MOMO URLs.</p>
+      <textarea id="tidListInput" placeholder="Enter TIDs here, one per line"></textarea>
+      <button id="processTidListBtn">Process TID List</button>
+      
+      <div class="auto-open-area momo-section">
+        <h3>Auto-open MOMO Links</h3>
+        <p>Automatically open MOMO product pages based on your TID list</p>
+        <div>
+          <label for="delay">Delay between tabs (seconds):</label>
+          <input type="number" id="delay" min="1" value="5">
+          <button id="startAutoOpenBtn">Start</button>
+          <button id="stopAutoOpenBtn" class="stop-btn">Stop</button>
+        </div>
+        <div id="progressInfo" class="progress-info"></div>
+        <div id="currentUrl" class="current-url"></div>
+      </div>
+    </div>
+    
+    <!-- Shopee Section -->
+    <div class="input-area">
+      <div class="platform-title">Shopee</div>
+      <h3>Enter Shopee Product URL List</h3>
+      <p>Enter one Shopee URL per line to set display order. URLs should be in the format: https://shopee.tw/product-i.SELLERID.PRODUCTID</p>
+      <textarea id="shopeeUrlListInput" placeholder="Enter Shopee URLs here, one per line"></textarea>
+      <button id="processShopeeUrlListBtn">Process URL List</button>
+      
+      <div class="auto-open-area shopee-section">
+        <h3>Auto-open Shopee Links</h3>
+        <p>Automatically open Shopee product pages based on your URL list</p>
+        <div>
+          <label for="shopeeDelay">Delay between tabs (seconds):</label>
+          <input type="number" id="shopeeDelay" min="1" value="5">
+          <button id="startShopeeAutoOpenBtn">Start</button>
+          <button id="stopShopeeAutoOpenBtn" class="stop-btn">Stop</button>
+        </div>
+        <div id="shopeeProgressInfo" class="progress-info"></div>
+        <div id="shopeeCurrentUrl" class="current-url"></div>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button id="exportDataBtn">Export Data</button>
+      <button id="copyToClipboardBtn">Copy to Clipboard</button>
+      <button id="clearDataBtn">Clear Data</button>
+    </div>
+    
+    <div id="statusMessage"></div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th width="9%" class="momo-column">MOMO TID</th>
+          <th width="9%" class="momo-column">MOMO ID</th>
+          <th width="9%" class="momo-column">MOMO Price</th>
+          <th width="18%" class="momo-column">MOMO Product Name</th>
+          <th width="18%" class="shopee-column">Shopee URL</th>
+          <th width="9%" class="shopee-column">Shopee ID</th>
+          <th width="9%" class="shopee-column">Shopee Price</th>
+          <th width="18%" class="shopee-column">Shopee Product Name</th>
+          <th width="5%" class="match-column">Match</th>
+        </tr>
+      </thead>
+      <tbody id="productTableBody">
+        <!-- Data will be filled here by JavaScript -->
+      </tbody>
+    </table>
+    
+    <div class="export-area">
+      <textarea id="exportTextarea" readonly></textarea>
+    </div>
+  </div>
+  
+  <script src="tracker.js"></script>
+</body>
+</html> 

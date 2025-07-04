@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+
+  <title>Momo_sales_stock</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      margin: 10px;
+
+      width: 400px;
+
+    }
+
+    table {
+
+      width: 100%;
+
+      border-collapse: collapse;
+
+      margin-bottom: 10px;
+
+      table-layout: fixed;
+
+    }
+
+    table, th, td {
+
+      border: 1px solid #333;
+
+    }
+
+    th, td {
+
+      padding: 6px 10px;
+
+      text-align: center;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+    }
+
+    th {
+
+      background-color: #f2f2f2;
+
+      font-weight: bold;
+
+    }
+
+    button {
+
+      padding: 5px 10px;
+
+      font-size: 14px;
+
+      margin-right: 5px;
+
+      margin-bottom: 5px;
+
+    }
+
+    .tabs {
+
+      display: flex;
+
+      border-bottom: 1px solid #ccc;
+
+      margin-bottom: 10px;
+
+    }
+
+    .tab {
+
+      padding: 8px 16px;
+
+      cursor: pointer;
+
+      background-color: #f1f1f1;
+
+      border: 1px solid #ccc;
+
+      border-bottom: none;
+
+      margin-right: 2px;
+
+    }
+
+    .tab.active {
+
+      background-color: white;
+
+      border-bottom: 1px solid white;
+
+    }
+
+    .tab-content {
+
+      display: none;
+
+      padding: 10px;
+
+      border: 1px solid #ccc;
+
+      border-top: none;
+
+    }
+
+    .tab-content.active {
+
+      display: block;
+
+    }
+
+    .batch-input {
+
+      width: 100%;
+
+      height: 100px;
+
+      margin-bottom: 10px;
+
+    }
+
+    .status-bar {
+
+      padding: 5px;
+
+      background-color: #f0f0f0;
+
+      margin-top: 10px;
+
+      text-align: center;
+
+    }
+
+    .progress-bar {
+
+      width: 100%;
+
+      background-color: #e0e0e0;
+
+      margin-top: 5px;
+
+    }
+
+    .progress-bar-fill {
+
+      height: 20px;
+
+      background-color: #4CAF50;
+
+      width: 0%;
+
+      text-align: center;
+
+      line-height: 20px;
+
+      color: white;
+
+    }
+
+    /* Fixed width for TID column */
+    #logTable th:first-child,
+    #logTable td:first-child {
+      width: 25%;
+      white-space: nowrap;
+    }
+    
+    /* Style for KAM column */
+    #logTable th:nth-child(2),
+    #logTable td:nth-child(2) {
+      width: 25%;
+      background-color: #f9f9f9;
+    }
+    
+    /* Striped table rows for better readability */
+    #logTable tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+    
+    #logTable tr:hover {
+      background-color: #e0f0ff;
+    }
+
+    /* Fixed width for TID column */
+    #logTable th:first-child,
+    #logTable td:first-child {
+      width: 25%;
+      white-space: nowrap;
+    }
+    
+    /* Style for KAM column */
+    #logTable th:nth-child(2),
+    #logTable td:nth-child(2) {
+      width: 25%;
+      background-color: #f9f9f9;
+    }
+    
+    /* Striped table rows for better readability */
+    #logTable tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+    
+    #logTable tr:hover {
+      background-color: #e0f0ff;
+    }
+    
+    /* Table container style */
+    .table-container {
+      display: flex;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    /* TID table style */
+    .tid-table {
+      width: 30%;
+      margin-right: 2px;
+    }
+    
+    /* Data table style */
+    .data-table {
+      width: 70%;
+    }
+    
+    /* Ensure consistent row height for both tables */
+    .tid-table tr, .data-table tr {
+      height: 36px;
+    }
+    
+    /* Apply hover effect to corresponding rows in both tables */
+    .tid-table tr:hover, .data-table tr:hover {
+      background-color: #e0f0ff;
+    }
+    
+    /* Ensure consistent striped background */
+    .tid-table tr:nth-child(even), .data-table tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+
+    /* Highlight style */
+    .highlight {
+      background-color: #e0f0ff !important;
+    }
+    
+    /* Switch button style - optimized size and position */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px; /* Slightly reduced width */
+              height: 26px; /* Reduce height */
+        margin-right: 10px; /* Increase right margin */
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 26px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+              height: 18px; /* Adjust inner circle size */
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(24px); /* Adjust movement distance */
+    }
+    
+    /* Settings option styles - change to vertical layout */
+    .setting-option {
+      margin: 20px 0;
+      display: block; /* Change to block display */
+    }
+    
+    .setting-option label.setting-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    
+    .setting-option .setting-control {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    
+    .setting-description {
+      margin-top: 5px;
+      color: #666;
+      font-size: 12px;
+      margin-left: 0px; /* Remove left margin, start from new line */
+      display: block; /* Ensure separate display */
+      clear: both;
+    }
+
+    /* Price tracking button styles */
+    .price-tracker-button {
+      background-color: #ff6b00;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+      width: 100%;
+    }
+    
+    .price-tracker-button:hover {
+      background-color: #e86000;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1>auto_mapping</h1>
+  
+  <div class="tabs">
+          <div class="tab active" data-tab="sort">Sort Page</div>
+      <div class="tab" data-tab="price">Price Tracking</div>
+      <div class="tab" data-tab="settings">Settings</div>
+  </div>
+
+  <div id="sort-tab" class="tab-content active">
+    <div class="table-container">
+      <!-- tid table -->
+      <table id="tidTable" class="tid-table">
+        <thead>
+          <tr>
+            <th>tid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- tid data dynamically inserted by popup.js -->
+        </tbody>
+      </table>
+
+      <!-- Data table -->
+      <table id="dataTable" class="data-table">
+        <thead>
+          <tr>
+            <th>KAM</th>
+            <th>Momo Sales</th>
+            <th>Momo Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data dynamically inserted by popup.js -->
+        </tbody>
+      </table>
+    </div>
+
+    <button id="openSortPage">Open Sort Page</button>
+
+    <button id="clearLogs">Clear Logs</button>
+
+  </div>
+
+  <div id="price-tab" class="tab-content">
+    <h3>Momo Product Price Tracking</h3>
+    
+    <p>This function can automatically extract and record the following information from MOMO product pages:</p>
+    <ul>
+      <li>Column A: Serial number (auto-generated)</li>
+      <li>Column B: Product ID (extracted from URL)</li>
+      <li>Column C: Product price (pure number without commas)</li>
+    </ul>
+    
+    <button id="openPriceTracker" class="price-tracker-button">Open Price Tracker</button>
+    
+    <div style="margin-top: 15px;">
+      <p>Keyboard shortcuts:</p>
+      <ul>
+        <li>Windows: Ctrl+Shift+P</li>
+        <li>Mac: Command+Shift+P</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="settings-tab" class="tab-content">
+
+    <h3>Settings</h3>
+
+    <div class="setting-option">
+      <label for="defaultDelay" class="setting-label">Page Processing Delay (ms): </label>
+      <div class="setting-control">
+        <input type="number" id="defaultDelay" min="100" max="5000" value="500" />
+      </div>
+      <div class="setting-description">Interval time for page processing, higher values are slower but more stable</div>
+    </div>
+
+    <div class="setting-option">
+      <label for="maxRetries" class="setting-label">Maximum Retry Attempts: </label>
+      <div class="setting-control">
+        <input type="number" id="maxRetries" min="1" max="20" value="10" />
+      </div>
+      <div class="setting-description">Maximum number of attempts to extract page data</div>
+    </div>
+
+    <div class="setting-option">
+      <label for="blockingEnabled" class="setting-label">Resource Blocking Function: </label>
+      <div class="setting-control">
+        <label class="switch">
+          <input type="checkbox" id="blockingEnabled" checked>
+          <span class="slider"></span>
+        </label>
+        <span id="blockingStatus">Enabled</span>
+      </div>
+      <div class="setting-description">
+        When enabled, blocks web ads, large images and other noise to speed up data loading and save resources. When disabled, loads full page but processing is slower.
+      </div>
+    </div>
+
+    <div class="setting-option">
+      <label for="autoCloseEnabled" class="setting-label">Auto Close Page: </label>
+      <div class="setting-control">
+        <label class="switch">
+          <input type="checkbox" id="autoCloseEnabled" checked>
+          <span class="slider"></span>
+        </label>
+        <span id="autoCloseStatus">Auto close after processing</span>
+      </div>
+      <div class="setting-description">
+        When enabled, automatically closes page after data processing and transmission is complete. When disabled, page remains open.
+      </div>
+    </div>
+
+    <div class="setting-option">
+      <label for="reloadDelay" class="setting-label">Page Reload Delay (ms): </label>
+      <div class="setting-control">
+        <input type="number" id="reloadDelay" min="500" max="10000" value="1000" />
+      </div>
+      <div class="setting-description">Wait time when page needs to reload, recommended setting is 1000-3000</div>
+    </div>
+
+    <button id="saveSettings">Save Settings</button>
+
+    <div id="settingsSaved" style="display: none; color: green; margin-top: 5px;">
+      Settings saved
+    </div>
+
+  </div>
+
+  <script src="popup.js"></script>
+
+</body>
+
+</html>

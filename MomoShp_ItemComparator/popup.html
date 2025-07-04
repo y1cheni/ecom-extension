@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Product Price Tracker</title>
+  <style>
+    body {
+      width: 280px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    
+    h2 {
+      color: #333;
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .platform-section {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px dotted #ccc;
+    }
+    
+    .platform-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .info-text {
+      color: #666;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      padding: 8px;
+      margin-top: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: none;
+    }
+    
+    .success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .shortcut {
+      background-color: #f5f5f5;
+      padding: 3px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h2>MomoShp_ItemComparator</h2>
+  
+  <div class="platform-section">
+    <div class="platform-title">MOMO Shopping</div>
+    <div class="info-text">
+      Current page: <span id="pageInfo">Not a MOMO product page</span>
+    </div>
+    <button id="trackPriceBtn" disabled>Track This MOMO Product</button>
+  </div>
+  
+  <div class="platform-section">
+    <div class="platform-title">Shopee</div>
+    <div class="info-text">
+      Current page: <span id="shopeePageInfo">Not a Shopee product page</span>
+    </div>
+    <button id="trackShopeeBtn" disabled>Track This Shopee Product</button>
+  </div>
+  
+  <button id="openTrackerBtn">Open Price Tracker</button>
+  
+  <div class="info-text">
+    Shortcut: <span class="shortcut">Ctrl+Shift+P</span> (Mac: <span class="shortcut">⌘+Shift+P</span>)
+  </div>
+  
+  <div id="statusMessage" class="status"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html> 

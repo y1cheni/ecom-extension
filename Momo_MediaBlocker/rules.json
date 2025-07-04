@@ -1,0 +1,39 @@
+[
+    {
+      "id": 1,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": {
+        "resourceTypes": ["image"],
+        "regexFilter": "^https://img[1-4]\\.momoshop\\.com\\.tw/expertimg/.*"
+      }
+    },
+    {
+      "id": 2,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": {
+        "resourceTypes": ["main_frame"],
+        "regexFilter": "^https://www\\.youtube\\.com/watch.*"
+      }
+    },
+    {
+      "id": 3,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": {
+        "resourceTypes": ["main_frame"],
+        "regexFilter": "^https://www\\.momoshop\\.com\\.tw/edm/cmmedm\\.jsp\\?.*"
+      }
+    },
+    {
+      "id": 4,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": {
+        "resourceTypes": ["image"],
+        "regexFilter": "^https://i[1-4]\\.momoshop\\.com\\.tw/.*goodsimg/.*"
+      }
+    }
+  ]
+  

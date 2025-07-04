@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Momo_brand_#ofSKU",
+  "version": "1.0",
+  "description": "Collect brand data and corresponding product quantities from MOMO shopping website",
+  
+  "permissions": [
+    "activeTab",
+    "storage", 
+    "scripting",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "https://www.momoshop.com.tw/*"
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Momo_brand_#ofSKU"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://www.momoshop.com.tw/search/searchShop.jsp*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["progress.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 

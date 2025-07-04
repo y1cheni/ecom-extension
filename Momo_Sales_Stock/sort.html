@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+
+  <title>auto_mapping</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      margin: 20px;
+
+      line-height: 1.5;
+
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Tab styles */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 15px;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      margin-right: 4px;
+      border-radius: 5px 5px 0 0;
+      transition: all 0.3s;
+    }
+    
+    .tab:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .tab.active {
+      background-color: white;
+      border-bottom: 1px solid white;
+      font-weight: bold;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-top: none;
+      min-height: 200px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Form elements */
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    
+    button {
+      padding: 8px 15px;
+      margin: 5px 5px 10px 0;
+      border: none;
+      border-radius: 4px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    button.secondary {
+      background-color: #f1f1f1;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+    
+    button.secondary:hover {
+      background-color: #e0e0e0;
+    }
+    
+    button.warning {
+      background-color: #f44336;
+    }
+    
+    button.warning:hover {
+      background-color: #d32f2f;
+    }
+    
+    select {
+      padding: 8px;
+      margin-right: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    /* Table styles */
+    .tid-table, .data-table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .tid-table th, .tid-table td,
+    .data-table th, .data-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        background-color: white !important; /* Force white background */
+        text-align: right !important; /* Right-align text */
+    }
+
+    /* Header styles */
+    .tid-table th, .data-table th {
+        background-color: white !important; /* Header also uses white background */
+        font-weight: bold;
+        text-align: right !important;
+    }
+
+    /* Remove different background colors for odd/even rows */
+    .tid-table tr:nth-child(even),
+    .data-table tr:nth-child(even) {
+        background-color: white !important;
+    }
+
+    .tid-table tr:nth-child(odd),
+    .data-table tr:nth-child(odd) {
+        background-color: white !important;
+    }
+
+    /* Split table container styles */
+    .table-container {
+      display: flex;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    
+    /* TID table styles */
+    .tid-table {
+      width: 30%;
+      margin-right: 4px;
+    }
+    
+    /* Data table styles */
+    .data-table {
+      width: 70%;
+    }
+    
+    /* Ensure consistent row height for both tables */
+    .tid-table tr, .data-table tr {
+      height: 40px;
+    }
+    
+    /* Highlight styles */
+    .highlight {
+      background-color: #e0f0ff !important;
+    }
+    
+    /* Progress bar styles */
+    .status-bar {
+      padding: 10px;
+      background-color: #f0f0f0;
+      margin: 15px 0;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      background-color: #e0e0e0;
+      margin-top: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+      height: 24px;
+      background-color: #4CAF50;
+      width: 0%;
+      text-align: center;
+      line-height: 24px;
+      color: white;
+      font-weight: bold;
+      transition: width 0.5s;
+    }
+    
+    /* Settings section styles */
+    .setting-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    
+    .setting-option {
+      margin: 15px 0;
+    }
+    
+    .setting-option label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    /* Common styles */
+    .mb-10 {
+      margin-bottom: 10px;
+    }
+    
+    .mt-20 {
+      margin-top: 20px;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .flex {
+      display: flex;
+      align-items: center;
+    }
+    
+    /* Floating info box */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      margin-left: 5px;
+      cursor: help;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .control-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .left-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .right-controls {
+      margin-left: auto;
+    }
+    
+    #concurrentTabs {
+      height: 32px;
+      margin: 0 10px;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="container">
+    <h1 class="text-center">auto_mapping</h1>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="sort">Data Management</div>
+      <div class="tab" data-tab="settings">Settings</div>
+    </div>
+    
+    <!-- 數據管理頁面 (整合排序日誌和批量處理) -->
+    <div id="sort-tab" class="tab-content active">
+      <p>Please paste the TID list here (one per line):</p>
+      <textarea id="tidInput" placeholder="Enter TID list here, one per line..."></textarea>
+      <div class="control-panel">
+        <div class="left-controls">
+          <button id="lockDataButton">Lock Data</button>
+          <button id="refreshButton" class="secondary" style="display:none;">Refresh</button>
+          <button id="exportButton" class="secondary" style="display:none;">Export Data</button>
+          <select id="concurrentTabs" style="margin-left: 10px;">
+            <option value="1">1 Tab</option>
+            <option value="2">2 Tabs</option>
+            <option value="3">3 Tabs</option>
+            <option value="4">4 Tabs</option>
+            <option value="5" selected>5 Tabs</option>
+            <option value="6">6 Tabs</option>
+            <option value="7">7 Tabs</option>
+            <option value="8">8 Tabs</option>
+            <option value="9">9 Tabs</option>
+            <option value="10">10 Tabs</option>
+          </select>
+          <button id="startProcessButton">Start Processing</button>
+          <button id="resumeProcessButton" class="secondary" style="display:none;">Resume Processing</button>
+          <button id="retryEmptyDataButton" class="secondary">Retry Processing Empty Data</button>
+        </div>
+        <div class="right-controls">
+          <button id="clearCookies" class="secondary">Clear Cookies</button>
+          <button id="clearLogs" class="warning">Clear All Logs</button>
+        </div>
+      </div>
+      
+      <!-- Cookie cleaning information display area -->
+      <div id="cookieStatus" class="status-bar" style="display: none; margin-top: 15px; margin-bottom: 15px;">
+        <div>Cookie cleaning status: <span id="cookieStatusText">Not executed</span></div>
+        <div id="cookieDetails" style="margin-top: 5px; font-size: 0.9em;"></div>
+      </div>
+      
+      <!-- Progress bar display - moved here, below the lock data button -->
+      <div id="batchStatus" class="status-bar" style="display: none; margin-top: 15px; margin-bottom: 15px;">
+        <div>Processing: <span id="batchProgress">0/0</span></div>
+        <div class="progress-bar">
+          <div id="progressBarFill" class="progress-bar-fill">0%</div>
+        </div>
+        <div>Estimated remaining time: <span id="remainingTime">Calculating...</span></div>
+      </div>
+      
+      <div id="resultArea" style="display:none;">
+        <h3>Sorted Results:</h3>
+        
+        <div class="table-container">
+          <!-- TID table -->
+          <table id="tidTable" class="tid-table">
+            <thead>
+              <tr>
+                <th>TID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- TID data dynamically inserted -->
+            </tbody>
+          </table>
+
+          <!-- Data table -->
+          <table id="dataTable" class="data-table">
+            <thead>
+              <tr>
+                <th>KAM</th>
+                <th>Momo Sales</th>
+                <th>Momo Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Data dynamically inserted -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Settings section -->
+    <div id="settings-tab" class="tab-content">
+      <h3>System Settings</h3>
+      
+      <div class="setting-section">
+        <h4>Processing Settings</h4>
+        
+        <div class="setting-option">
+          <label for="defaultDelay">Page processing delay (ms): </label>
+          <div class="flex">
+            <input type="number" id="defaultDelay" min="100" max="5000" value="500" />
+            <div class="tooltip">?
+              <span class="tooltiptext">Page processing interval time, higher values are slower but more stable</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-option">
+          <label for="maxRetries">Maximum retry attempts: </label>
+          <div class="flex">
+            <input type="number" id="maxRetries" min="1" max="20" value="10" />
+            <div class="tooltip">?
+              <span class="tooltiptext">Maximum number of attempts to extract page data</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-option">
+          <label for="reloadDelay">Page reload delay (ms): </label>
+          <div class="flex">
+            <input type="number" id="reloadDelay" min="500" max="10000" value="1000" />
+            <div class="tooltip">?
+              <span class="tooltiptext">Wait time when page needs to reload, recommended 1000-3000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="setting-section">
+        <h4>Feature Settings</h4>
+        
+        <div class="setting-option">
+          <label>
+            <input type="checkbox" id="blockingEnabled" checked>
+            Block webpage noise
+            <div class="tooltip">?
+              <span class="tooltiptext">When enabled, blocks webpage ads, large images and other noise to speed up data loading and save resources</span>
+            </div>
+            <span id="blockingStatus" style="margin-left: 10px; font-size: 0.9em; color: #666;">Enabled</span>
+          </label>
+        </div>
+        
+        <div class="setting-option">
+          <label>
+            <input type="checkbox" id="autoCloseEnabled" checked>
+            Auto-close page after processing
+            <div class="tooltip">?
+              <span class="tooltiptext">When enabled, automatically closes page after data processing is complete and sent</span>
+            </div>
+            <span id="autoCloseStatus" style="margin-left: 10px; font-size: 0.9em; color: #666;">Auto-close after completion</span>
+          </label>
+        </div>
+      </div>
+      
+      <button id="saveSettings">Save Settings</button>
+      <div id="settingsSaved" style="display: none; color: green; margin-top: 10px;">
+        Settings saved
+      </div>
+    </div>
+  </div>
+
+  <script src="sort.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Coupang SKU Counter",
+  "version": "1.2",
+  "description": "Count and manage delivery SKU numbers from Coupang search pages with batch processing capabilities.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "https://www.tw.coupang.com/search*",
+    "https://www.tw.coupang.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.tw.coupang.com/search*", "https://www.tw.coupang.com/*"],
+      "js": ["search_automation.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Coupang SKU Counter",
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["monitor.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 

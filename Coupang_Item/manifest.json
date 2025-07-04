@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Coupang_Item",
+  "version": "1.0",
+  "description": "Extract brand, VendorItemId, itemId, model, price, review count and URL from Coupang product pages.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://www.tw.coupang.com/products/*",
+    "https://www.tw.coupang.com/search*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.tw.coupang.com/products/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.tw.coupang.com/search*"],
+      "js": ["search_automation.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Coupang_Item",
+    "default_popup": "popup.html"
+  }
+} 

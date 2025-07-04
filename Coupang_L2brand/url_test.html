@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Parsing Test - Coupang Data Collector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007cba;
+        }
+        .url-input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        .code {
+            background: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 URL Parsing Test Tool</h1>
+    
+    <div class="test-section">
+        <h2>Test URL Parsing Function</h2>
+        <p>Enter a Coupang category page URL to test if L2 category code and brand code extraction is correct:</p>
+        
+        <input type="text" id="testUrl" class="url-input" 
+               placeholder="Enter Coupang URL, e.g.: https://www.tw.coupang.com/categories/%E6%89%8B%E6%A9%9F-550279?listSize=120&brand=42308&page=1"
+               value="https://www.tw.coupang.com/categories/%E6%89%8B%E6%A9%9F-550279?listSize=120&filterType=rocket&rating=0&isPriceRange=false&minPrice=&maxPrice=&component=&sorter=bestAsc&brand=42308&offerCondition=&filter=&fromComponent=N&channel=user&page=1">
+        
+        <br><button onclick="testUrlParsing()">Test Parsing</button>
+        
+        <div id="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Preset Test Cases</h2>
+        <p>Click the buttons below to test different URL formats:</p>
+        
+        <button onclick="testCase1()">Test Case 1: Mobile-Apple</button>
+        <button onclick="testCase2()">Test Case 2: Mobile Accessories-PHILIPS</button>
+        <button onclick="testCase3()">Test Case 3: Simplified URL</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Expected Result Format</h2>
+        <div class="result">
+            <strong>L2 Category Code Format:</strong> <span class="code">%E6%89%8B%E6%A9%9F-550279?</span><br>
+            <strong>Brand Code Format:</strong> <span class="code">brand=42308&</span>
+        </div>
+    </div>
+
+    <script>
+        function extractFromUrl(url) {
+            console.log('Testing URL:', url);
+            
+            const results = {
+                l2Type: '',
+                brandCode: '',
+                success: false,
+                errors: []
+            };
+            
+            try {
+                // Extract L2 category code
+                console.log('Full URL:', url);
+                
+                const categoryMatch = url.match(/\/categories\/([^?&]+)/);
+                if (categoryMatch && categoryMatch[1]) {
+                    results.l2Type = categoryMatch[1] + '?';
+                    console.log('L2 Type extraction successful:', results.l2Type);
+                } else {
+                    console.log('L2 Type extraction failed, trying alternative method...');
+                    const pathParts = url.split('/categories/');
+                    if (pathParts.length > 1) {
+                        const categoryPart = pathParts[1].split('?')[0];
+                        if (categoryPart) {
+                            results.l2Type = categoryPart + '?';
+                            console.log('L2 Type alternative method extraction:', results.l2Type);
+                        }
+                    }
+                }
+                
+                if (!results.l2Type) {
+                    results.errors.push('Unable to extract L2 category code');
+                }
+                
+                // Extract brand code
+                const brandMatch = url.match(/brand=(\d+)/);
+                if (brandMatch && brandMatch[1]) {
+                    results.brandCode = `brand=${brandMatch[1]}&`;
+                    console.log('Brand Code extraction successful:', results.brandCode);
+                } else {
+                    console.log('Brand Code extraction failed, URL may not contain brand parameter');
+                    results.errors.push('Unable to extract brand code');
+                }
+                
+                results.success = results.l2Type && results.brandCode;
+                
+            } catch (error) {
+                results.errors.push('Error occurred during parsing: ' + error.message);
+            }
+            
+            return results;
+        }
+        
+        function displayResults(results, url) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `<h3>Parsing Results</h3>`;
+            html += `<div class="result"><strong>Test URL:</strong><br><code>${url}</code></div>`;
+            
+            if (results.success) {
+                html += `<div class="result success">
+                    <strong>✅ Parsing Successful</strong><br>
+                    <strong>L2 Category Code:</strong> <code>${results.l2Type}</code><br>
+                    <strong>Brand Code:</strong> <code>${results.brandCode}</code>
+                </div>`;
+            } else {
+                html += `<div class="result error">
+                    <strong>❌ Parsing Failed</strong><br>
+                    <strong>L2 Category Code:</strong> <code>${results.l2Type || 'Not extracted'}</code><br>
+                    <strong>Brand Code:</strong> <code>${results.brandCode || 'Not extracted'}</code><br>
+                    <strong>Error Messages:</strong> ${results.errors.join(', ')}
+                </div>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function testUrlParsing() {
+            const url = document.getElementById('testUrl').value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            const results = extractFromUrl(url);
+            displayResults(results, url);
+        }
+        
+        function testCase1() {
+            const url = 'https://www.tw.coupang.com/categories/%E6%89%8B%E6%A9%9F-550279?listSize=120&filterType=rocket&brand=42308&page=1';
+            document.getElementById('testUrl').value = url;
+            const results = extractFromUrl(url);
+            displayResults(results, url);
+        }
+        
+        function testCase2() {
+            const url = 'https://www.tw.coupang.com/categories/%E6%89%8B%E6%A9%9F%E9%85%8D%E4%BB%B6-550280?brand=12345&listSize=120&page=2';
+            document.getElementById('testUrl').value = url;
+            const results = extractFromUrl(url);
+            displayResults(results, url);
+        }
+        
+        function testCase3() {
+            const url = 'https://tw.coupang.com/categories/550279?brand=42308';
+            document.getElementById('testUrl').value = url;
+            const results = extractFromUrl(url);
+            displayResults(results, url);
+        }
+    </script>
+</body>
+</html> 

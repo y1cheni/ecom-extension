@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Coupang_L2brand",
+  "version": "1.0",
+  "description": "Collect L2 brand classification data from Coupang website",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "https://www.tw.coupang.com/*"
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Coupang_L2brand"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://www.tw.coupang.com/categories/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["progress.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 
