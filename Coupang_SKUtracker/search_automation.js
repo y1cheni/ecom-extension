@@ -276,6 +276,89 @@
     });
   }
 
+  // Check if URL is categories type
+  function isCategoriesUrl() {
+    return location.href.includes('https://www.tw.coupang.com/categories/');
+  }
+
+  // Extract L2 category from categories URL
+  function extractL2CategoryFromUrl() {
+    try {
+      if (!isCategoriesUrl()) {
+        return '';
+      }
+      
+      const url = location.href;
+      const categoriesIndex = url.indexOf('categories/');
+      const listSizeIndex = url.indexOf('listSize=');
+      
+      if (categoriesIndex !== -1 && listSizeIndex !== -1) {
+        const startIndex = categoriesIndex + 'categories/'.length;
+        const l2Category = url.substring(startIndex, listSizeIndex);
+        console.log('[Coupang Automation] L2 category extracted from URL:', l2Category);
+        return l2Category;
+      }
+    } catch (e) {
+      console.error('[Coupang Automation] Error extracting L2 category from URL:', e);
+    }
+    return '';
+  }
+
+  // Extract L2 category from any URL
+  function extractL2CategoryFromUrlString(urlString) {
+    try {
+      if (!urlString || !urlString.includes('categories/')) {
+        return '';
+      }
+      
+      const categoriesIndex = urlString.indexOf('categories/');
+      const listSizeIndex = urlString.indexOf('listSize=');
+      
+      if (categoriesIndex !== -1 && listSizeIndex !== -1) {
+        const startIndex = categoriesIndex + 'categories/'.length;
+        const l2Category = urlString.substring(startIndex, listSizeIndex);
+        console.log('[Coupang Automation] L2 category extracted from URL string:', l2Category);
+        return l2Category;
+      }
+    } catch (e) {
+      console.error('[Coupang Automation] Error extracting L2 category from URL string:', e);
+    }
+    return '';
+  }
+
+  // Find URL position for current brand/category combination
+  function findUrlPosition(brand, l2Category, originalBatchUrls) {
+    if (!originalBatchUrls || originalBatchUrls.length === 0) {
+      return 999; // Default position if no batch URLs
+    }
+    
+    const isCurrentCategories = isCategoriesUrl();
+    
+    const urlPosition = originalBatchUrls.findIndex(url => {
+      if (url === '0') return false;
+      try {
+        const urlObj = new URL(url);
+        const query = urlObj.searchParams.get('q');
+        const urlBrand = query ? decodeURIComponent(query) : '';
+        
+        // For categories URLs, also check L2 category
+        if (isCurrentCategories && url.includes('categories/')) {
+          const urlL2Category = extractL2CategoryFromUrlString(url);
+          return urlBrand === brand && urlL2Category === l2Category;
+        } else {
+          // For search URLs, only check brand
+          return urlBrand === brand;
+        }
+      } catch (e) {
+        console.error('[Coupang Automation] Error processing URL in findUrlPosition:', e);
+        return false;
+      }
+    });
+    
+    console.log(`[Coupang Automation] URL position for brand "${brand}" (L2: "${l2Category}"):`, urlPosition);
+    return urlPosition >= 0 ? urlPosition : 999;
+  }
+
   // Extract brand name from URL
   function getBrandFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -561,28 +644,37 @@
       const isBatchProcessing = result.coupang_batch_processing || false;
       
       if (isBatchProcessing) {
-        // Save error data to maintain order
-        const errorData = {
-          brand: brand,
-          skuCount: 0,
-          timestamp: Date.now(),
-          page: parseInt(getCurrentPageFromUrl()),
-          isCompleted: true,
-          isError: true,
-          errorReason: 'Not Found page'
-        };
-        
-        chrome.storage.local.get(['coupang_delivery_data'], function(dataResult) {
-          const existingData = dataResult.coupang_delivery_data || [];
-          existingData.push(errorData);
-          chrome.storage.local.set({ 'coupang_delivery_data': existingData }, function() {
-            console.log(`[Coupang Automation] Saved Not Found error data for brand: ${brand}`, errorData);
-            
-            // Move to next brand by processing the completion
-            setTimeout(() => {
-              console.log('[Coupang Automation] Triggering brand completion for Not Found page');
-              handleBrandCompletion(brand);
-            }, 1000);
+        // Get URL position for proper ordering
+        chrome.storage.local.get(['coupang_original_batch_urls'], function(batchResult) {
+          const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
+          const l2Category = extractL2CategoryFromUrl();
+          const urlPosition = findUrlPosition(brand, l2Category, originalBatchUrls);
+          
+          // Save error data to maintain order
+          const errorData = {
+            brand: brand,
+            l2Category: l2Category,
+            skuCount: 0,
+            timestamp: Date.now(),
+            page: parseInt(getCurrentPageFromUrl()),
+            isCompleted: true,
+            isError: true,
+            errorReason: 'Not Found page',
+            urlPosition: urlPosition
+          };
+          
+          chrome.storage.local.get(['coupang_delivery_data'], function(dataResult) {
+            const existingData = dataResult.coupang_delivery_data || [];
+            existingData.push(errorData);
+            chrome.storage.local.set({ 'coupang_delivery_data': existingData }, function() {
+              console.log(`[Coupang Automation] Saved Not Found error data for brand: ${brand} (position ${urlPosition})`, errorData);
+              
+              // Move to next brand by processing the completion
+              setTimeout(() => {
+                console.log('[Coupang Automation] Triggering brand completion for Not Found page');
+                handleBrandCompletion(brand);
+              }, 1000);
+            });
           });
         });
       } else {
@@ -675,22 +767,31 @@
             console.log('[Coupang Automation] Batch processing timeout detected, creating error placeholder');
             const brand = getBrandFromUrl();
             
-            const errorData = {
-              brand: brand,
-              skuCount: 0,
-              timestamp: Date.now(),
-              page: parseInt(getCurrentPageFromUrl()),
-              isCompleted: true,
-              isError: true,
-              errorReason: 'Page load timeout'
-            };
-            
-            chrome.storage.local.get(['coupang_delivery_data'], function(dataResult) {
-              const existingData = dataResult.coupang_delivery_data || [];
-              existingData.push(errorData);
-              chrome.storage.local.set({ 'coupang_delivery_data': existingData }, function() {
-                console.log(`[Coupang Automation] Saved timeout error data for brand: ${brand}`, errorData);
-                handleBrandCompletion(brand);
+            // Get URL position for proper ordering
+            chrome.storage.local.get(['coupang_original_batch_urls'], function(batchResult) {
+              const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
+              const l2Category = extractL2CategoryFromUrl();
+              const urlPosition = findUrlPosition(brand, l2Category, originalBatchUrls);
+              
+              const errorData = {
+                brand: brand,
+                l2Category: l2Category,
+                skuCount: 0,
+                timestamp: Date.now(),
+                page: parseInt(getCurrentPageFromUrl()),
+                isCompleted: true,
+                isError: true,
+                errorReason: 'Page load timeout',
+                urlPosition: urlPosition
+              };
+              
+              chrome.storage.local.get(['coupang_delivery_data'], function(dataResult) {
+                const existingData = dataResult.coupang_delivery_data || [];
+                existingData.push(errorData);
+                chrome.storage.local.set({ 'coupang_delivery_data': existingData }, function() {
+                  console.log(`[Coupang Automation] Saved timeout error data for brand: ${brand} (position ${urlPosition})`, errorData);
+                  handleBrandCompletion(brand);
+                });
               });
             });
             return;
@@ -710,32 +811,49 @@
   // Process delivery counting
   function processDeliveryCounting() {
     const brand = getBrandFromUrl();
+    const l2Category = extractL2CategoryFromUrl();
     const currentPageNum = getCurrentPageFromUrl();
     
-    console.log(`[Coupang Automation] Processing brand "${brand}" page ${currentPageNum}`);
+    console.log(`[Coupang Automation] Processing brand "${brand}" page ${currentPageNum}, L2 category: ${l2Category}`);
     
     chrome.storage.local.get(['coupang_delivery_data'], function(result) {
       const existingData = result.coupang_delivery_data || [];
       
-      // Check if this specific brand and page combination already exists
-      const existingEntry = existingData.find(item => 
-        item.brand === brand && item.page === parseInt(currentPageNum)
-      );
+      // Create unique identifier for categories vs search URLs
+      const isCategories = isCategoriesUrl();
+      let uniqueIdentifier = brand;
+      if (isCategories && l2Category) {
+        uniqueIdentifier = `${brand}|${l2Category}`;
+        console.log(`[Coupang Automation] Categories URL detected, using unique identifier: ${uniqueIdentifier}`);
+      }
+      
+      // Check if this specific brand/category and page combination already exists
+      const existingEntry = existingData.find(item => {
+        if (isCategories && item.l2Category) {
+          return item.brand === brand && item.l2Category === l2Category && item.page === parseInt(currentPageNum);
+        } else {
+          return item.brand === brand && item.page === parseInt(currentPageNum);
+        }
+      });
       
       if (existingEntry) {
-        console.log(`[Coupang Automation] Data for brand "${brand}" page ${currentPageNum} already processed`);
+        console.log(`[Coupang Automation] Data for identifier "${uniqueIdentifier}" page ${currentPageNum} already processed`);
         
-        // If this brand is already completed (found a page with SKU=0), move to next brand
-        const brandCompleted = existingData.some(item => 
-          item.brand === brand && item.isCompleted === true
-        );
+        // Check if this brand/category combination is already completed
+        const brandCompleted = existingData.some(item => {
+          if (isCategories && item.l2Category) {
+            return item.brand === brand && item.l2Category === l2Category && item.isCompleted === true;
+          } else {
+            return item.brand === brand && item.isCompleted === true;
+          }
+        });
         
         if (brandCompleted) {
-          console.log(`[Coupang Automation] Brand "${brand}" already completed, moving to next brand`);
+          console.log(`[Coupang Automation] Identifier "${uniqueIdentifier}" already completed, moving to next brand`);
           handleBrandCompletion(brand);
         } else {
           // Brand not completed yet, continue to next page
-          console.log(`[Coupang Automation] Brand "${brand}" not completed yet, moving to next page`);
+          console.log(`[Coupang Automation] Identifier "${uniqueIdentifier}" not completed yet, moving to next page`);
           setTimeout(() => {
             goToNextPage();
           }, 1000);
@@ -781,37 +899,25 @@
               // Get URL position for proper ordering
               chrome.storage.local.get(['coupang_original_batch_urls'], function(batchResult) {
                 const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
-                let urlPosition = -1;
-                
-                // Find the URL position for this brand
-                if (originalBatchUrls.length > 0) {
-                  urlPosition = originalBatchUrls.findIndex(url => {
-                    if (url === '0') return false;
-                    try {
-                      const urlObj = new URL(url);
-                      const query = urlObj.searchParams.get('q');
-                      return query ? decodeURIComponent(query) === brand : false;
-                    } catch (e) {
-                      return false;
-                    }
-                  });
-                }
+                const urlPosition = findUrlPosition(brand, l2Category, originalBatchUrls);
                 
                 // Add completion entry (current page is not saved, brand ends here)
                 const completionEntry = {
                   brand: brand,
+                  l2Category: l2Category,
                   skuCount: 0,
                   timestamp: Date.now(),
                   page: parseInt(currentPageNum),
                   isCompleted: true,
                   isDuplicate: true, // Mark as ended due to duplicate detection
                   firstProductId: firstProductId,
-                  urlPosition: urlPosition >= 0 ? urlPosition : 999 // Track original URL position for ordering
+                  urlPosition: urlPosition // Track original URL position for ordering
                 };
                 
                 filteredData.push(completionEntry);
                 chrome.storage.local.set({ 'coupang_delivery_data': filteredData }, function() {
                   console.log(`[Coupang Automation] Preserved page ${previousPageNum} data, skipped duplicate page ${currentPageNum}, and marked brand "${brand}" as completed (position ${urlPosition})`);
+                  // Handle brand completion with confirmed data save
                   handleBrandCompletion(brand);
                 });
               });
@@ -821,30 +927,17 @@
               // Get URL position for proper ordering
               chrome.storage.local.get(['coupang_original_batch_urls'], function(batchResult) {
                 const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
-                let urlPosition = -1;
-                
-                // Find the URL position for this brand
-                if (originalBatchUrls.length > 0) {
-                  urlPosition = originalBatchUrls.findIndex(url => {
-                    if (url === '0') return false;
-                    try {
-                      const urlObj = new URL(url);
-                      const query = urlObj.searchParams.get('q');
-                      return query ? decodeURIComponent(query) === brand : false;
-                    } catch (e) {
-                      return false;
-                    }
-                  });
-                }
+                const urlPosition = findUrlPosition(brand, l2Category, originalBatchUrls);
                 
                 const dataEntry = {
                   brand: brand,
+                  l2Category: l2Category,
                   skuCount: deliveryCount,
                   timestamp: Date.now(),
                   page: parseInt(currentPageNum),
                   isCompleted: false,
                   firstProductId: firstProductId, // Save first product identifier for duplicate detection
-                  urlPosition: urlPosition >= 0 ? urlPosition : 999 // Track original URL position for ordering
+                  urlPosition: urlPosition // Track original URL position for ordering
                 };
                 
                 currentData.push(dataEntry);
@@ -853,10 +946,10 @@
                   
                   updateStatus(`Found ${deliveryCount} delivery items on page ${currentPageNum}. Moving to next page...`);
                   
-                  // Move to next page after delay
+                  // Move to next page after confirming data is saved
                   setTimeout(() => {
                     goToNextPage();
-                  }, 1000);
+                  }, 500); // Reduced delay since we confirmed save
                 });
               });
               
@@ -867,38 +960,25 @@
               // Get URL position for proper ordering
               chrome.storage.local.get(['coupang_original_batch_urls'], function(batchResult) {
                 const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
-                let urlPosition = -1;
-                
-                // Find the URL position for this brand
-                if (originalBatchUrls.length > 0) {
-                  urlPosition = originalBatchUrls.findIndex(url => {
-                    if (url === '0') return false;
-                    try {
-                      const urlObj = new URL(url);
-                      const query = urlObj.searchParams.get('q');
-                      return query ? decodeURIComponent(query) === brand : false;
-                    } catch (e) {
-                      return false;
-                    }
-                  });
-                }
+                const urlPosition = findUrlPosition(brand, l2Category, originalBatchUrls);
                 
                 // Save final data (SKU=0, marked as completed)
                 const completionEntry = {
                   brand: brand,
+                  l2Category: l2Category,
                   skuCount: 0,
                   timestamp: Date.now(),
                   page: parseInt(currentPageNum),
                   isCompleted: true,
                   firstProductId: firstProductId,
-                  urlPosition: urlPosition >= 0 ? urlPosition : 999 // Track original URL position for ordering
+                  urlPosition: urlPosition // Track original URL position for ordering
                 };
                 
                 currentData.push(completionEntry);
                 chrome.storage.local.set({ 'coupang_delivery_data': currentData }, function() {
                   console.log(`[Coupang Automation] Brand "${brand}" completed with final entry (position ${urlPosition}):`, completionEntry);
                   
-                  // Handle brand completion
+                  // Handle brand completion with confirmed data save
                   handleBrandCompletion(brand);
                 });
               });
@@ -909,7 +989,7 @@
   }
   
   // Ensure brand data exists to maintain batch processing order
-  function ensureBrandDataExists(brand) {
+  function ensureBrandDataExists(brand, callback) {
     chrome.storage.local.get(['coupang_delivery_data', 'coupang_original_batch_urls'], function(result) {
       const existingData = result.coupang_delivery_data || [];
       const originalBatchUrls = result.coupang_original_batch_urls || [];
@@ -922,34 +1002,27 @@
         console.log(`[Coupang Automation] No data found for brand "${brand}", creating placeholder entry`);
         
         // Find the URL position for this brand
-        let urlPosition = -1;
-        if (originalBatchUrls.length > 0) {
-          urlPosition = originalBatchUrls.findIndex(url => {
-            if (url === '0') return false;
-            try {
-              const urlObj = new URL(url);
-              const query = urlObj.searchParams.get('q');
-              return query ? decodeURIComponent(query) === brand : false;
-            } catch (e) {
-              return false;
-            }
-          });
-        }
+        const urlPosition = findUrlPosition(brand, '', originalBatchUrls);
         
         const placeholderEntry = {
           brand: brand,
+          l2Category: '',
           skuCount: 0,
           timestamp: Date.now(),
           page: 1,
           isCompleted: true, // Mark as completed
           isPlaceholder: true, // Mark as placeholder for debugging
-          urlPosition: urlPosition >= 0 ? urlPosition : 999 // Track original URL position for ordering
+          urlPosition: urlPosition // Track original URL position for ordering
         };
         
         existingData.push(placeholderEntry);
         chrome.storage.local.set({ 'coupang_delivery_data': existingData }, function() {
           console.log(`[Coupang Automation] Created placeholder entry for brand: ${brand} (position ${urlPosition})`, placeholderEntry);
+          if (callback) callback();
         });
+      } else {
+        console.log(`[Coupang Automation] Brand "${brand}" already has data (${brandData.length} entries)`);
+        if (callback) callback();
       }
     });
   }
@@ -965,11 +1038,10 @@
     isProcessing = false;
     isAutoMode = false;
     
-    // Ensure this brand has at least one entry to maintain order
-    ensureBrandDataExists(brand);
-    
-    // Wait a moment for data to be saved before proceeding
-    setTimeout(() => {
+    // Ensure this brand has at least one entry to maintain order, with callback
+    ensureBrandDataExists(brand, function() {
+      console.log(`[Coupang Automation] Brand data existence confirmed for: ${brand}`);
+      
       // Check if this is part of batch processing
       chrome.storage.local.get(['coupang_batch_processing', 'coupang_batch_urls', 'coupang_batch_current_index'], function(result) {
         const isBatchProcessing = result.coupang_batch_processing || false;
@@ -990,11 +1062,11 @@
             }, function() {
               updateStatus(`Moving to next brand (${nextIndex + 1}/${batchUrls.length})...`);
               
-              // Navigate to next URL after a short delay
+              // Navigate to next URL after confirming storage update
               setTimeout(() => {
                 console.log('[Coupang Automation] Opening next batch URL');
                 window.location.href = batchUrls[nextIndex];
-              }, 2000);
+              }, 1000); // Reduced delay since we have confirmed storage
             });
           } else {
             // All batch URLs completed - check if this was reprocessing missing brands
@@ -1050,6 +1122,7 @@
                       
                       return {
                         brand: brand,
+                        l2Category: '',
                         skuCount: 0,
                         timestamp: baseTimestamp + (originalIndex >= 0 ? originalIndex : index), // Use original index for ordering
                         page: 0,
@@ -1189,6 +1262,7 @@
                           
                           return {
                             brand: brand,
+                            l2Category: '',
                             skuCount: 0,
                             timestamp: baseTimestamp + (originalIndex >= 0 ? originalIndex : index),
                             page: 0,
@@ -1519,6 +1593,7 @@
       // Record placeholder data immediately without checking for duplicates to speed up
       const placeholderData = {
         brand: '0',
+        l2Category: '',
         skuCount: 0,
         timestamp: Date.now(),
         page: 1,

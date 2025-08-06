@@ -15,11 +15,40 @@
   // Global variables
   let isProcessing = false;
   let currentBrand = '';
+  let currentL2Category = '';
   let currentPage = 1;
   let totalSkuCount = 0;
   let urlPosition = 0;
   let lastFirstProduct = null;
   let duplicatePageDetected = false;
+
+  // Check if URL is categories type
+  function isCategoriesUrl() {
+    return location.href.includes('https://www.tw.coupang.com/categories/');
+  }
+
+  // Extract L2 category from categories URL
+  function extractL2CategoryFromUrl() {
+    try {
+      if (!isCategoriesUrl()) {
+        return '';
+      }
+      
+      const url = location.href;
+      const categoriesIndex = url.indexOf('categories/');
+      const listSizeIndex = url.indexOf('listSize=');
+      
+      if (categoriesIndex !== -1 && listSizeIndex !== -1) {
+        const startIndex = categoriesIndex + 'categories/'.length;
+        const l2Category = url.substring(startIndex, listSizeIndex);
+        console.log('[Coupang SKU Counter] L2 category extracted from URL:', l2Category);
+        return l2Category;
+      }
+    } catch (e) {
+      console.error('[Coupang SKU Counter] Error extracting L2 category from URL:', e);
+    }
+    return '';
+  }
 
   // Extract brand from URL - Get string between "&q=" and "&page="
   function extractBrandFromUrl() {
@@ -183,6 +212,7 @@
   function saveProgress(skuCount, isCompleted = false, isNoData = false) {
     const data = {
       brand: currentBrand,
+      l2Category: currentL2Category,
       page: currentPage,
       skuCount: skuCount,
       urlPosition: urlPosition,
@@ -215,83 +245,43 @@
     }
   }
 
-  // Process current page
+  // Main processing function
   async function processCurrentPage() {
     if (isProcessing) return;
     
-    console.log('[Coupang SKU Counter] Processing page:', currentPage);
     isProcessing = true;
-
-    try {
-      // Wait for page to load
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Check for duplicate page first
-      if (checkDuplicatePage()) {
-        console.log('[Coupang SKU Counter] Duplicate page detected, removing current page data (if any) and finishing processing');
-        
-        // If duplicate page, remove current page data (if saved) and complete processing
-        chrome.storage.local.get(['coupang_delivery_data'], function(result) {
-          let allData = result.coupang_delivery_data || [];
-          
-          // Remove current duplicate page records (if any)
-          const currentPageEntries = allData.filter(item => 
-            item.brand === currentBrand && 
-            item.urlPosition === urlPosition &&
-            item.page === currentPage
-          );
-          
-          if (currentPageEntries.length > 0) {
-            console.log(`[Coupang SKU Counter] Removing current duplicate page ${currentPage} data`);
-            
-            // Remove current duplicate page records
-            allData = allData.filter(item => 
-              !(item.brand === currentBrand && 
-                item.urlPosition === urlPosition &&
-                item.page === currentPage)
-            );
-            
-            chrome.storage.local.set({ coupang_delivery_data: allData }, function() {
-              console.log(`[Coupang SKU Counter] Removed duplicate page ${currentPage} data, preserving previous pages`);
-              saveProgress(totalSkuCount, true, totalSkuCount === 0);
-              finishBrandProcessing();
-            });
-          } else {
-            // No current page data to remove, complete directly
-            console.log(`[Coupang SKU Counter] No current page data to remove, finishing with total: ${totalSkuCount}`);
-            saveProgress(totalSkuCount, true, totalSkuCount === 0);
-            finishBrandProcessing();
-          }
-        });
-        return;
-      }
-
-      // Count delivery items on current page
-      const pageSkuCount = countDeliveryItems();
-      
-      if (pageSkuCount > 0) {
-        totalSkuCount += pageSkuCount;
-        saveProgress(pageSkuCount, false);
-        
-        // Show progress notification
-        showNotification(`Page ${currentPage}: Found ${pageSkuCount} SKUs (Total: ${totalSkuCount})`, 'info');
-        
-        // Go to next page after delay
-        setTimeout(() => {
-          goToNextPage();
-        }, 2000);
-      } else {
-        // No items found, complete processing
-        console.log('[Coupang SKU Counter] No delivery items found, completing brand processing');
-        saveProgress(totalSkuCount, true, totalSkuCount === 0);
-        finishBrandProcessing();
-      }
-    } catch (e) {
-      console.error('[Coupang SKU Counter] Error processing page:', e);
-      saveProgress(totalSkuCount, true, false);
+    currentBrand = extractBrandFromUrl();
+    currentL2Category = extractL2CategoryFromUrl();
+    currentPage = extractPageFromUrl();
+    
+    console.log(`[Coupang SKU Counter] Processing page ${currentPage} for brand: ${currentBrand}, L2 category: ${currentL2Category}`);
+    
+    // Check for duplicate pages
+    if (checkDuplicatePage()) {
+      console.log('[Coupang SKU Counter] Duplicate page detected, finishing processing');
       finishBrandProcessing();
-    } finally {
-      isProcessing = false;
+      return;
+    }
+    
+    // Wait for page to load
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Count delivery items
+    const deliveryCount = countDeliveryItems();
+    totalSkuCount += deliveryCount;
+    
+    if (deliveryCount === 0) {
+      console.log('[Coupang SKU Counter] No delivery items found, marking as completed');
+      saveProgress(0, true, false);
+      finishBrandProcessing();
+    } else {
+      console.log(`[Coupang SKU Counter] Found ${deliveryCount} delivery items`);
+      saveProgress(deliveryCount, false, false);
+      
+      // Go to next page
+      setTimeout(() => {
+        goToNextPage();
+      }, 1000);
     }
   }
 
@@ -378,20 +368,19 @@
     }
   });
 
-  // Initialize
+  // Initialize processing
   function initialize() {
     console.log('[Coupang SKU Counter] Initializing...');
     
-    currentBrand = extractBrandFromUrl();
-    currentPage = extractPageFromUrl();
-    
-    console.log('[Coupang SKU Counter] Initialized with brand:', currentBrand, 'page:', currentPage);
-    
-    // Check if we should start processing automatically
-    chrome.storage.local.get(['coupang_batch_processing'], function(result) {
-      if (result.coupang_batch_processing) {
-        console.log('[Coupang SKU Counter] Batch processing is active, waiting for start signal...');
-      }
+    // Get URL position from storage if available
+    chrome.storage.local.get(['coupang_batch_current_index'], function(result) {
+      urlPosition = result.coupang_batch_current_index || 0;
+      console.log(`[Coupang SKU Counter] URL position: ${urlPosition}`);
+      
+      // Start processing after a short delay
+      setTimeout(() => {
+        processCurrentPage();
+      }, 1000);
     });
   }
 

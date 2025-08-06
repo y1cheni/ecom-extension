@@ -24,7 +24,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["monitor.html"],
+      "resources": ["monitor.html", "data_viewer.html"],
       "matches": ["<all_urls>"]
     }
   ]

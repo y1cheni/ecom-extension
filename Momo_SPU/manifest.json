@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Momo_SPU",
+  "version": "1.0",
+  "description": "Automatically search Momo shopping website products and extract product names, supports auto page turning and result copying",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.momoshop.com.tw/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Momo_SPU"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.momoshop.com.tw/search/searchShop.jsp*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+} 

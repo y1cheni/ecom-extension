@@ -1,17 +1,16 @@
-// Coupang SKU Counter Extension - Popup Script
+// Coupang SKU Counter Extension - Data Viewer Script
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[Coupang Extension] Popup loaded');
+  console.log('[Coupang Extension] Data Viewer loaded');
   
   let autoRefreshInterval;
   
-  // Initialize the popup
+  // Initialize the data viewer
   initialize();
   
   // Button event listeners
   document.getElementById('clearDataBtn').addEventListener('click', clearDeliveryData);
   document.getElementById('exportCsvBtn').addEventListener('click', exportDeliveryData);
   document.getElementById('copyDataBtn').addEventListener('click', copyDeliveryData);
-  document.getElementById('openDataViewerBtn').addEventListener('click', openDataViewer);
   
   document.getElementById('startBatchBtn').addEventListener('click', startBatchProcessing);
   document.getElementById('stopBatchBtn').addEventListener('click', stopBatchProcessing);
@@ -64,8 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadDeliveryData() {
     chrome.storage.local.get(['coupang_delivery_data'], function(result) {
       const data = result.coupang_delivery_data || [];
-      console.log('[Coupang Extension] Loaded delivery data:', data);
-      console.log('[Coupang Extension] Total data entries:', data.length);
+      console.log('[Coupang Extension] Data Viewer loaded delivery data:', data);
+      console.log('[Coupang Extension] Data Viewer total data entries:', data.length);
       
       // Debug: Show data breakdown by status
       const statusBreakdown = {};
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const status = item.isCompleted ? 'Completed' : 'Processing';
         statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
       });
-      console.log('[Coupang Extension] Data breakdown by status:', statusBreakdown);
+      console.log('[Coupang Extension] Data Viewer breakdown by status:', statusBreakdown);
       
       displayDeliveryData(data);
     });
@@ -88,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    console.log('[Coupang Extension] Processing data for display - maintaining original order...');
+    console.log('[Coupang Extension] Data Viewer processing data for display - maintaining original order...');
     
     // Create table with L2 category column
     let tableHtml = `
@@ -114,14 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
       // Use original batch URLs if available, otherwise current batch URLs
       const referenceBatchUrls = originalBatchUrls.length > 0 ? originalBatchUrls : batchUrls;
       
-      console.log('[Coupang Extension] Display mode - reference URLs:', referenceBatchUrls);
+      console.log('[Coupang Extension] Data Viewer display mode - reference URLs:', referenceBatchUrls);
       
       let displayRows = [];
       
       if (referenceBatchUrls.length > 0) {
         // SIMPLE GOOGLE SHEETS STYLE: 1st row URL → 1st row result, 2nd row URL → 2nd row result
-        console.log('[Coupang Extension] SIMPLE DISPLAY: Like Google Sheets - URL order = Display order');
-        console.log('[Coupang Extension] Original URLs:', referenceBatchUrls);
+        console.log('[Coupang Extension] Data Viewer SIMPLE DISPLAY: Like Google Sheets - URL order = Display order');
+        console.log('[Coupang Extension] Data Viewer original URLs:', referenceBatchUrls);
         
         // Create position-based data map for fast lookup
         const positionData = {};
@@ -154,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
         
-        console.log('[Coupang Extension] Position data map:', positionData);
+        console.log('[Coupang Extension] Data Viewer position data map:', positionData);
         
         // Now create display rows in exact URL order
         referenceBatchUrls.forEach((url, index) => {
@@ -176,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const query = urlObj.searchParams.get('q');
               brandName = query ? decodeURIComponent(query) : 'Unknown';
             } catch (e) {
-              console.warn(`[Coupang Extension] Failed to parse URL: ${url}`);
+              console.warn(`[Coupang Extension] Data Viewer failed to parse URL: ${url}`);
             }
             
             // Always extract L2 category from URL (not from stored data)
@@ -192,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: positionData[index].status,
                 position: index
               });
-              console.log(`[Coupang Extension] Position ${index}: Found data - ${brandName}, L2: ${l2Category} (${positionData[index].totalSku} SKUs)`);
+              console.log(`[Coupang Extension] Data Viewer position ${index}: Found data - ${brandName}, L2: ${l2Category} (${positionData[index].totalSku} SKUs)`);
             } else {
               // No data for this position
               displayRows.push({
@@ -200,95 +199,95 @@ document.addEventListener('DOMContentLoaded', function() {
                 l2Category: l2Category, // Use L2 category from URL
                 totalSku: 0,
                 pagesProcessed: 0,
-                status: 'No Data',
+                status: 'Processing',
                 position: index
               });
-              console.log(`[Coupang Extension] Position ${index}: No data - ${brandName}, L2: ${l2Category}`);
+              console.log(`[Coupang Extension] Data Viewer position ${index}: No data yet - ${brandName}, L2: ${l2Category}`);
             }
           }
         });
         
-        console.log('[Coupang Extension] Final display (Google Sheets style):', displayRows.map(row => `${row.position}: ${row.brand} - ${row.totalSku} SKUs`));
+        console.log('[Coupang Extension] Data Viewer final display rows:', displayRows);
       } else {
-        // Fallback: show data in position order
-        console.log('[Coupang Extension] No reference URLs - using position order');
+        // No batch URLs available, display data in timestamp order
+        console.log('[Coupang Extension] Data Viewer no batch URLs available, displaying in timestamp order');
         
-        const positionData = {};
+        // Group data by brand+l2Category for aggregation
+        const brandGroups = {};
         data.forEach(item => {
-          const pos = item.urlPosition !== undefined ? item.urlPosition : 999;
-          if (!positionData[pos]) {
-            positionData[pos] = {
+          const key = `${item.brand}|${item.l2Category || ''}`;
+          if (!brandGroups[key]) {
+            brandGroups[key] = {
               brand: item.brand,
               l2Category: item.l2Category || '',
               totalSku: 0,
               pagesProcessed: 0,
               status: 'Processing',
-              position: pos
+              timestamp: item.timestamp
             };
           }
           
-          positionData[pos].totalSku += item.skuCount;
+          brandGroups[key].totalSku += item.skuCount;
           if (item.page > 0) {
-            positionData[pos].pagesProcessed++;
+            brandGroups[key].pagesProcessed++;
           }
           
           if (item.isCompleted) {
             if (item.isNoData || item.isSkipped || (item.skuCount === 0 && item.page === 0)) {
-              positionData[pos].status = 'No Data';
+              brandGroups[key].status = 'No Data';
             } else {
-              positionData[pos].status = 'Completed';
+              brandGroups[key].status = 'Completed';
             }
           }
         });
         
-        displayRows = Object.values(positionData).sort((a, b) => a.position - b.position);
+        displayRows = Object.values(brandGroups).sort((a, b) => a.timestamp - b.timestamp);
       }
       
+      // Generate table rows
       displayRows.forEach(row => {
         const statusClass = row.status === 'Completed' ? 'status-completed' : 
-                           row.status === 'Processing' ? 'status-processing' : 
-                           row.status === 'No Data' ? 'status-no-data' : 'status-failed';
+                           row.status === 'No Data' ? 'status-no-data' : 
+                           'status-processing';
         
-        const statusText = row.status === 'Completed' ? 'Completed' : 
-                          row.status === 'Processing' ? 'Processing' : 
-                          row.status === 'No Data' ? 'No Data' : 'Failed';
-        
-        const decodedL2Category = row.l2Category ? decodeURIComponent(row.l2Category) : '';
         tableHtml += `
           <tr>
             <td title="${row.brand}">${row.brand}</td>
-            <td title="${decodedL2Category}">${decodedL2Category}</td>
+            <td title="${row.l2Category || '-'}">${row.l2Category || '-'}</td>
             <td>${row.totalSku}</td>
             <td>${row.pagesProcessed}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td><span class="status-badge ${statusClass}">${row.status}</span></td>
           </tr>
         `;
       });
       
       tableHtml += `
-          </tbody>
-        </table>
+        </tbody>
+      </table>
       `;
       
       container.innerHTML = tableHtml;
       
       // Add column resizing functionality
       makeTableColumnsResizable();
+      
+      // Update document title with current data count
+      document.title = `Coupang SKU Counter - Data Viewer (${displayRows.length} items)`;
     });
   }
   
   // Clear delivery data
   function clearDeliveryData() {
-    if (confirm('Are you sure you want to clear all SKU data?')) {
+    if (confirm('Are you sure you want to clear all delivery data?')) {
       chrome.storage.local.remove(['coupang_delivery_data'], function() {
-        console.log('[Coupang Extension] Delivery data cleared');
+        console.log('[Coupang Extension] Data Viewer cleared all delivery data');
+        showStatus('All delivery data cleared', 'success');
         loadDeliveryData();
-        showStatus('Data cleared successfully', 'success');
       });
     }
   }
   
-  // Export delivery data as CSV
+  // Export delivery data to CSV
   function exportDeliveryData() {
     chrome.storage.local.get(['coupang_delivery_data'], function(result) {
       const data = result.coupang_delivery_data || [];
@@ -298,24 +297,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      console.log('[Coupang Extension] Export function - maintaining original order...');
-      
-      // Check if we have batch processing data to maintain original URL order
-      chrome.storage.local.get(['coupang_batch_processing', 'coupang_batch_urls', 'coupang_original_batch_urls'], function(batchResult) {
-        const isBatchProcessing = batchResult.coupang_batch_processing || false;
+      // Get batch URLs for proper ordering
+      chrome.storage.local.get(['coupang_batch_urls', 'coupang_original_batch_urls'], function(batchResult) {
         const batchUrls = batchResult.coupang_batch_urls || [];
         const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
-        
-        // Use original batch URLs if available, otherwise current batch URLs
         const referenceBatchUrls = originalBatchUrls.length > 0 ? originalBatchUrls : batchUrls;
         
-        let exportRows = [];
+        let exportData = [];
         
         if (referenceBatchUrls.length > 0) {
-          // GOOGLE SHEETS STYLE EXPORT: URL position = Result position
-          console.log('[Coupang Extension] EXPORT - Google Sheets style: URL order = Result order');
+          // Export in URL order (like Google Sheets)
+          console.log('[Coupang Extension] Data Viewer exporting in URL order');
           
-          // Create position-based data map for fast lookup
+          // Create position-based data map
           const positionData = {};
           data.forEach(item => {
             if (item.urlPosition !== undefined) {
@@ -344,16 +338,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           });
           
-          // Create export rows in exact URL order
+          // Create export data in URL order
           referenceBatchUrls.forEach((url, index) => {
             if (url === '0') {
-              exportRows.push({
+              exportData.push({
                 brand: '0',
                 l2Category: '',
                 totalSku: 0,
                 pagesProcessed: 0,
                 status: 'Completed',
-                position: index
+                url: url
               });
             } else {
               let brandName = 'Unknown';
@@ -362,74 +356,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 const query = urlObj.searchParams.get('q');
                 brandName = query ? decodeURIComponent(query) : 'Unknown';
               } catch (e) {
-                console.warn(`[Coupang Extension] Export - Failed to parse URL: ${url}`);
+                console.warn(`[Coupang Extension] Data Viewer failed to parse URL: ${url}`);
               }
               
-              // Always extract L2 category from URL (not from stored data)
               let l2Category = extractL2CategoryFromUrl(url);
               
               if (positionData[index]) {
-                exportRows.push({
+                exportData.push({
                   brand: brandName,
-                  l2Category: l2Category, // Always use L2 category from URL
+                  l2Category: l2Category,
                   totalSku: positionData[index].totalSku,
                   pagesProcessed: positionData[index].pagesProcessed,
                   status: positionData[index].status,
-                  position: index
+                  url: url
                 });
               } else {
-                exportRows.push({
+                exportData.push({
                   brand: brandName,
-                  l2Category: l2Category, // Use L2 category from URL
+                  l2Category: l2Category,
                   totalSku: 0,
                   pagesProcessed: 0,
-                  status: 'No Data',
-                  position: index
+                  status: 'Processing',
+                  url: url
                 });
               }
             }
           });
         } else {
-          // Fallback: position order
-          const positionData = {};
+          // No batch URLs, export in timestamp order
+          console.log('[Coupang Extension] Data Viewer exporting in timestamp order');
+          
+          const brandGroups = {};
           data.forEach(item => {
-            const pos = item.urlPosition !== undefined ? item.urlPosition : 999;
-            if (!positionData[pos]) {
-              positionData[pos] = {
+            const key = `${item.brand}|${item.l2Category || ''}`;
+            if (!brandGroups[key]) {
+              brandGroups[key] = {
                 brand: item.brand,
                 l2Category: item.l2Category || '',
                 totalSku: 0,
                 pagesProcessed: 0,
                 status: 'Processing',
-                position: pos
+                timestamp: item.timestamp
               };
             }
             
-            positionData[pos].totalSku += item.skuCount;
+            brandGroups[key].totalSku += item.skuCount;
             if (item.page > 0) {
-              positionData[pos].pagesProcessed++;
+              brandGroups[key].pagesProcessed++;
             }
             
             if (item.isCompleted) {
               if (item.isNoData || item.isSkipped || (item.skuCount === 0 && item.page === 0)) {
-                positionData[pos].status = 'No Data';
+                brandGroups[key].status = 'No Data';
               } else {
-                positionData[pos].status = 'Completed';
+                brandGroups[key].status = 'Completed';
               }
             }
           });
           
-          exportRows = Object.values(positionData).sort((a, b) => a.position - b.position);
+          exportData = Object.values(brandGroups).sort((a, b) => a.timestamp - b.timestamp);
         }
         
         // Create CSV content
-        let csvContent = 'Brand,L2 Category,SKU Count,Pages Processed,Status\n';
-        exportRows.forEach(row => {
-          const status = row.status === 'Completed' ? 'Completed' : 
-                        row.status === 'Processing' ? 'Processing' : 
-                        row.status === 'No Data' ? 'No Data' : 'Failed';
-          const decodedL2Category = row.l2Category ? decodeURIComponent(row.l2Category) : '';
-          csvContent += `"${row.brand}","${decodedL2Category}",${row.totalSku},${row.pagesProcessed},"${status}"\n`;
+        const csvHeaders = ['Brand', 'L2 Category', 'SKU Count', 'Pages Processed', 'Status'];
+        let csvContent = csvHeaders.join(',') + '\n';
+        
+        exportData.forEach(row => {
+          const csvRow = [
+            `"${row.brand}"`,
+            `"${row.l2Category || ''}"`,
+            row.totalSku,
+            row.pagesProcessed,
+            `"${row.status}"`
+          ];
+          csvContent += csvRow.join(',') + '\n';
         });
         
         // Download CSV file
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.click();
         document.body.removeChild(link);
         
-        showStatus('CSV exported successfully', 'success');
+        showStatus(`CSV exported successfully (${exportData.length} items)`, 'success');
       });
     });
   }
@@ -458,25 +458,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      console.log('[Coupang Extension] Copy function - raw data entries:', data.length);
-      console.log('[Coupang Extension] Copy function - maintaining original order...');
-      
-      // Check if we have batch processing data (current or original) to preserve order
-      chrome.storage.local.get(['coupang_batch_processing', 'coupang_batch_urls', 'coupang_original_batch_urls'], function(batchResult) {
-        const isBatchProcessing = batchResult.coupang_batch_processing || false;
+      // Get batch URLs for proper ordering
+      chrome.storage.local.get(['coupang_batch_urls', 'coupang_original_batch_urls'], function(batchResult) {
         const batchUrls = batchResult.coupang_batch_urls || [];
         const originalBatchUrls = batchResult.coupang_original_batch_urls || [];
-        
-        // Use original batch URLs if available, otherwise current batch URLs
         const referenceBatchUrls = originalBatchUrls.length > 0 ? originalBatchUrls : batchUrls;
         
-        let copyRows = [];
+        let copyData = [];
         
         if (referenceBatchUrls.length > 0) {
-          // GOOGLE SHEETS STYLE COPY: URL position = Result position
-          console.log('[Coupang Extension] COPY - Google Sheets style: URL order = Result order');
+          // Copy in URL order (like Google Sheets)
+          console.log('[Coupang Extension] Data Viewer copying in URL order');
           
-          // Create position-based data map for fast lookup
+          // Create position-based data map
           const positionData = {};
           data.forEach(item => {
             if (item.urlPosition !== undefined) {
@@ -505,16 +499,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           });
           
-          // Create copy rows in exact URL order
+          // Create copy data in URL order
           referenceBatchUrls.forEach((url, index) => {
             if (url === '0') {
-              copyRows.push({
+              copyData.push({
                 brand: '0',
                 l2Category: '',
                 totalSku: 0,
                 pagesProcessed: 0,
-                status: 'Completed',
-                position: index
+                status: 'Completed'
               });
             } else {
               let brandName = 'Unknown';
@@ -523,216 +516,137 @@ document.addEventListener('DOMContentLoaded', function() {
                 const query = urlObj.searchParams.get('q');
                 brandName = query ? decodeURIComponent(query) : 'Unknown';
               } catch (e) {
-                console.warn(`[Coupang Extension] Copy - Failed to parse URL: ${url}`);
+                console.warn(`[Coupang Extension] Data Viewer failed to parse URL: ${url}`);
               }
               
-              // Always extract L2 category from URL (not from stored data)
               let l2Category = extractL2CategoryFromUrl(url);
               
               if (positionData[index]) {
-                copyRows.push({
+                copyData.push({
                   brand: brandName,
-                  l2Category: l2Category, // Always use L2 category from URL
+                  l2Category: l2Category,
                   totalSku: positionData[index].totalSku,
                   pagesProcessed: positionData[index].pagesProcessed,
-                  status: positionData[index].status,
-                  position: index
+                  status: positionData[index].status
                 });
               } else {
-                copyRows.push({
+                copyData.push({
                   brand: brandName,
-                  l2Category: l2Category, // Use L2 category from URL
+                  l2Category: l2Category,
                   totalSku: 0,
                   pagesProcessed: 0,
-                  status: 'No Data',
-                  position: index
+                  status: 'Processing'
                 });
               }
             }
           });
         } else {
-          // Fallback: position order
-          const positionData = {};
+          // No batch URLs, copy in timestamp order
+          console.log('[Coupang Extension] Data Viewer copying in timestamp order');
+          
+          const brandGroups = {};
           data.forEach(item => {
-            const pos = item.urlPosition !== undefined ? item.urlPosition : 999;
-            if (!positionData[pos]) {
-              positionData[pos] = {
+            const key = `${item.brand}|${item.l2Category || ''}`;
+            if (!brandGroups[key]) {
+              brandGroups[key] = {
                 brand: item.brand,
                 l2Category: item.l2Category || '',
                 totalSku: 0,
                 pagesProcessed: 0,
                 status: 'Processing',
-                position: pos
+                timestamp: item.timestamp
               };
             }
             
-            positionData[pos].totalSku += item.skuCount;
+            brandGroups[key].totalSku += item.skuCount;
             if (item.page > 0) {
-              positionData[pos].pagesProcessed++;
+              brandGroups[key].pagesProcessed++;
             }
             
             if (item.isCompleted) {
               if (item.isNoData || item.isSkipped || (item.skuCount === 0 && item.page === 0)) {
-                positionData[pos].status = 'No Data';
+                brandGroups[key].status = 'No Data';
               } else {
-                positionData[pos].status = 'Completed';
+                brandGroups[key].status = 'Completed';
               }
             }
           });
           
-          copyRows = Object.values(positionData).sort((a, b) => a.position - b.position);
+          copyData = Object.values(brandGroups).sort((a, b) => a.timestamp - b.timestamp);
         }
         
-        // Create text content - ALWAYS include all brands including those with 0 SKU
-        console.log('[Coupang Extension] Copy data - total brands to copy:', copyRows.length);
+        // Create tab-separated content for easy pasting into spreadsheets
+        const headers = ['Brand', 'L2 Category', 'SKU Count', 'Pages Processed', 'Status'];
+        let content = headers.join('\t') + '\n';
         
-        let textContent = 'Brand\tL2 Category\tSKU Count\tPages Processed\tStatus\n';
-        copyRows.forEach((row, index) => {
-          const status = row.status === 'Completed' ? 'Completed' : 
-                         row.status === 'Processing' ? 'Processing' : 
-                         row.status === 'No Data' ? 'No Data' : 'Failed';
-          const decodedL2Category = row.l2Category ? decodeURIComponent(row.l2Category) : '';
-          
-          console.log(`[Coupang Extension] Copy brand ${index + 1}: ${row.brand}, L2: ${decodedL2Category}, SKU: ${row.totalSku}, Pages: ${row.pagesProcessed}, Status: ${status}`);
-          textContent += `${row.brand}\t${decodedL2Category}\t${row.totalSku}\t${row.pagesProcessed}\t${status}\n`;
+        copyData.forEach(row => {
+          const dataRow = [
+            row.brand,
+            row.l2Category || '',
+            row.totalSku,
+            row.pagesProcessed,
+            row.status
+          ];
+          content += dataRow.join('\t') + '\n';
         });
         
         // Copy to clipboard
-        navigator.clipboard.writeText(textContent).then(() => {
-          showStatus('Data copied to clipboard', 'success');
+        navigator.clipboard.writeText(content).then(() => {
+          showStatus(`Data copied to clipboard (${copyData.length} items)`, 'success');
         }).catch(err => {
-          console.error('[Coupang Extension] Copy failed:', err);
-          showStatus('Copy failed', 'error');
+          console.error('[Coupang Extension] Data Viewer failed to copy to clipboard:', err);
+          showStatus('Failed to copy to clipboard', 'error');
         });
       });
     });
   }
   
-  // Continue processing existing "No Data" entries
+  // Continue processing No Data entries
   function continueProcessingNoData() {
-    console.log('[Coupang Extension] Checking for existing "No Data" entries to continue processing...');
-    
-    chrome.storage.local.get(['coupang_delivery_data', 'coupang_original_batch_urls'], function(result) {
-      const currentData = result.coupang_delivery_data || [];
-      const originalUrls = result.coupang_original_batch_urls || [];
+    chrome.storage.local.get(['coupang_delivery_data'], function(result) {
+      const data = result.coupang_delivery_data || [];
       
-      // Find entries with "No Data" status (excluding "0" placeholders)
-      // Only consider items explicitly marked as No Data
-      const noDataEntries = currentData.filter(item => {
-        return item.isNoData && item.brand !== '0';
-      });
-      
-      console.log('[Coupang Extension] Found No Data entries:', noDataEntries);
+      // Find entries marked as "No Data" that could be reprocessed
+      const noDataEntries = data.filter(item => item.isNoData && !item.isSkipped);
       
       if (noDataEntries.length === 0) {
-        showStatus('No "No Data" entries found to continue processing', 'info');
+        showStatus('No reprocessable entries found', 'error');
         return;
       }
       
-      // Extract brand names from No Data entries
-      const noDataBrands = noDataEntries.map(item => item.brand);
-      console.log('[Coupang Extension] No Data brands to reprocess:', noDataBrands);
+      // Extract brands from No Data entries
+      const brandsToReprocess = [...new Set(noDataEntries.map(item => item.brand))];
       
-      // Generate URLs only for No Data brands that need reprocessing
-      const urlsToProcess = [];
+      console.log('[Coupang Extension] Data Viewer found brands to reprocess:', brandsToReprocess);
       
-      if (originalUrls.length > 0) {
-        // Find original URLs for the No Data brands
-        noDataBrands.forEach(brand => {
-          const originalUrl = originalUrls.find(url => {
-            if (url === '0') return false;
-            try {
-              const urlObj = new URL(url);
-              const query = urlObj.searchParams.get('q');
-              const brandFromUrl = query ? decodeURIComponent(query) : 'Unknown';
-              return brandFromUrl === brand;
-            } catch (e) {
-              return false;
-            }
-          });
-          
-          if (originalUrl) {
-            urlsToProcess.push(originalUrl);
-          } else {
-            // Generate new URL if original not found
-            const encodedBrand = encodeURIComponent(brand);
-            urlsToProcess.push(`https://www.tw.coupang.com/search?q=${encodedBrand}`);
-          }
-        });
-      } else {
-        // Generate new URLs for No Data brands
-        noDataBrands.forEach(brand => {
-          const encodedBrand = encodeURIComponent(brand);
-          urlsToProcess.push(`https://www.tw.coupang.com/search?q=${encodedBrand}`);
-        });
-      }
-      
-      console.log('[Coupang Extension] URLs to process for No Data brands:', urlsToProcess);
-      
-      // Remove existing No Data entries from storage to avoid duplicates
-      // Only remove items that are explicitly marked as No Data or are the specific brands we want to reprocess
-      const filteredData = currentData.filter(item => {
-        // Don't remove if it's explicitly marked as No Data
-        if (item.isNoData) {
-          return false;
-        }
-        
-        // Don't remove if it's one of the brands we want to reprocess
-        if (noDataBrands.includes(item.brand)) {
-          return false;
-        }
-        
-        // Keep all other data
-        return true;
+      // Create URLs for reprocessing
+      const reprocessUrls = brandsToReprocess.map(brand => {
+        if (brand === '0') return '0';
+        return `https://www.tw.coupang.com/search?q=${encodeURIComponent(brand)}`;
       });
       
-      console.log('[Coupang Extension] Removed No Data entries, remaining data:', filteredData.length);
+      // Start batch processing with these URLs
+      const batchSettings = {
+        'coupang_batch_processing': true,
+        'coupang_batch_urls': reprocessUrls,
+        'coupang_original_batch_urls': reprocessUrls,
+        'coupang_batch_current_index': 0,
+        'coupang_batch_current_url': reprocessUrls[0]
+      };
       
-      if (urlsToProcess.length === 0) {
-        showStatus('No valid URLs found in No Data entries', 'error');
-        return;
-      }
-      
-      // Get first URL to start processing (all URLs should be valid since we only added valid ones)
-      const firstValidUrl = urlsToProcess[0];
-      const firstValidIndex = 0;
-      
-      // Update storage with filtered data and start processing
-      chrome.storage.local.set({ 'coupang_delivery_data': filteredData }, function() {
-        console.log('[Coupang Extension] Starting to reprocess No Data entries...');
-        
-        // Set up minimal batch processing state for No Data reprocessing
-        chrome.storage.local.set({
-          'coupang_batch_processing': true,
-          'coupang_batch_urls': urlsToProcess,
-          'coupang_batch_current_index': 0,
-          'coupang_batch_current_url': firstValidUrl
-          // Deliberately NOT updating coupang_original_batch_urls to preserve original order
-        }, function() {
-          // Open first URL for reprocessing
-          chrome.tabs.create({ url: firstValidUrl }, function(tab) {
-            // Send message to start processing after page loads
-            setTimeout(() => {
-              chrome.tabs.sendMessage(tab.id, { 
-                action: 'startProcessing',
-                urlPosition: 0 // Use 0 for reprocessing to avoid conflicts
-              }, function(response) {
-                if (chrome.runtime.lastError) {
-                  console.log('[Coupang Extension] Failed to start No Data reprocessing:', chrome.runtime.lastError);
-                } else {
-                  console.log('[Coupang Extension] No Data reprocessing started successfully:', response);
-                }
-              });
-            }, 4000);
-            
-            // Close popup after starting
-            setTimeout(() => {
-              window.close();
-            }, 1000);
-          });
+      chrome.storage.local.set(batchSettings, function() {
+        // Open first URL for reprocessing
+        chrome.tabs.create({ url: reprocessUrls[0] }, function(tab) {
+          showStatus(`Reprocessing ${brandsToReprocess.length} brands`, 'success');
+          
+          // Send message to start processing
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tab.id, { 
+              action: 'startProcessing',
+              urlPosition: 0
+            });
+          }, 4000);
         });
-        
-        showStatus(`Continue processing ${noDataEntries.length} "No Data" items`, 'success');
       });
     });
   }
@@ -754,13 +668,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const fixedUrl = urlObj.toString();
         
         if (fixedUrl !== url) {
-          console.log(`[Coupang Extension] Fixed URL encoding: ${url} -> ${fixedUrl}`);
+          console.log(`[Coupang Extension] Data Viewer fixed URL encoding: ${url} -> ${fixedUrl}`);
         }
         
         return fixedUrl;
       }
     } catch (e) {
-      console.warn(`[Coupang Extension] Failed to fix URL encoding: ${url}`, e);
+      console.warn(`[Coupang Extension] Data Viewer failed to fix URL encoding: ${url}`, e);
     }
     
     return url;
@@ -836,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (placeholderData.length > 0) {
       // Clear old data and save only the new placeholder data
       chrome.storage.local.set({ 'coupang_delivery_data': placeholderData }, function() {
-        console.log('[Coupang Extension] Cleared old data and saved new placeholder data:', placeholderData);
+        console.log('[Coupang Extension] Data Viewer cleared old data and saved new placeholder data:', placeholderData);
         
         // Start batch processing with the first valid URL, don't clear data since we just set the placeholders
         startBatchProcessingWithFirstUrl(urls, firstValidUrl, firstValidIndex, false);
@@ -864,9 +778,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     chrome.storage.local.set(batchSettings, function() {
-      console.log('[Coupang Extension] SKU batch processing started with URLs:', urls);
-      console.log('[Coupang Extension] Starting SKU counting with first valid URL:', firstValidUrl, 'at index:', firstValidIndex);
-      console.log('[Coupang Extension] Original batch URLs saved for order preservation:', urls);
+      console.log('[Coupang Extension] Data Viewer SKU batch processing started with URLs:', urls);
+      console.log('[Coupang Extension] Data Viewer starting SKU counting with first valid URL:', firstValidUrl, 'at index:', firstValidIndex);
+      console.log('[Coupang Extension] Data Viewer original batch URLs saved for order preservation:', urls);
       
       // Open first valid URL for SKU counting
       chrome.tabs.create({ url: firstValidUrl }, function(tab) {
@@ -879,32 +793,27 @@ document.addEventListener('DOMContentLoaded', function() {
             urlPosition: firstValidIndex
           }, function(response) {
             if (chrome.runtime.lastError) {
-              console.log('[Coupang Extension] Failed to start SKU counting:', chrome.runtime.lastError);
+              console.log('[Coupang Extension] Data Viewer failed to start SKU counting:', chrome.runtime.lastError);
             } else {
-              console.log('[Coupang Extension] SKU counting started successfully:', response);
+              console.log('[Coupang Extension] Data Viewer SKU counting started successfully:', response);
             }
           });
         }, 4000); // Wait for page to fully load
-        
-        // Close popup after starting
-        setTimeout(() => {
-          window.close();
-        }, 1000);
       });
     });
   }
   
   // Stop batch processing
   function stopBatchProcessing() {
-    console.log('[Coupang Extension] Stopping batch processing - preserving all data');
+    console.log('[Coupang Extension] Data Viewer stopping batch processing - preserving all data');
     
     // Get current batch processing data to ensure all brands are preserved
     chrome.storage.local.get(['coupang_delivery_data', 'coupang_batch_urls'], function(result) {
       const currentData = result.coupang_delivery_data || [];
       const batchUrls = result.coupang_batch_urls || [];
       
-      console.log(`[Coupang Extension] Before stopping: ${currentData.length} data entries`);
-      console.log(`[Coupang Extension] Batch URLs: ${batchUrls.length} URLs`);
+      console.log(`[Coupang Extension] Data Viewer before stopping: ${currentData.length} data entries`);
+      console.log(`[Coupang Extension] Data Viewer batch URLs: ${batchUrls.length} URLs`);
       
       // Extract all brands from batch URLs
       const allBrands = batchUrls.map(url => {
@@ -922,9 +831,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const existingBrands = new Set(currentData.map(item => item.brand));
       const missingBrands = allBrands.filter(brand => !existingBrands.has(brand));
       
-      console.log(`[Coupang Extension] All brands from URLs:`, allBrands);
-      console.log(`[Coupang Extension] Existing brands with data:`, Array.from(existingBrands));
-      console.log(`[Coupang Extension] Missing brands (need No Data entries):`, missingBrands);
+      console.log(`[Coupang Extension] Data Viewer all brands from URLs:`, allBrands);
+      console.log(`[Coupang Extension] Data Viewer existing brands with data:`, Array.from(existingBrands));
+      console.log(`[Coupang Extension] Data Viewer missing brands (need No Data entries):`, missingBrands);
       
       // Create "No Data" entries for brands that were never processed with proper ordering
       const baseTimestamp = Date.now();
@@ -955,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add No Data entries to preserve all brands
         const updatedData = currentData.concat(noDataEntries);
         chrome.storage.local.set({ 'coupang_delivery_data': updatedData }, function() {
-          console.log(`[Coupang Extension] Added ${noDataEntries.length} No Data entries:`, noDataEntries);
+          console.log(`[Coupang Extension] Data Viewer added ${noDataEntries.length} No Data entries:`, noDataEntries);
           
           // Now remove batch processing states
           chrome.storage.local.remove([
@@ -965,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'coupang_batch_current_url',
             'coupang_auto_collecting'
           ], function() {
-            console.log('[Coupang Extension] Batch processing stopped - all brands preserved including No Data');
+            console.log('[Coupang Extension] Data Viewer batch processing stopped - all brands preserved including No Data');
             showStatus('Batch processing stopped - all brands preserved', 'success');
             
             // Refresh the display to show all data including No Data brands
@@ -983,24 +892,15 @@ document.addEventListener('DOMContentLoaded', function() {
           'coupang_batch_current_url',
           'coupang_auto_collecting'
         ], function() {
-          console.log('[Coupang Extension] Batch processing stopped - data preserved');
-          showStatus('Batch processing stopped - all data preserved', 'success');
+          console.log('[Coupang Extension] Data Viewer batch processing stopped - all brands already preserved');
+          showStatus('Batch processing stopped', 'success');
           
-          // Refresh the display to show current data
+          // Refresh the display
           setTimeout(() => {
             loadDeliveryData();
           }, 500);
         });
       }
-    });
-  }
-  
-  // Open data viewer in new tab
-  function openDataViewer() {
-    const dataViewerUrl = chrome.runtime.getURL('data_viewer.html');
-    chrome.tabs.create({ url: dataViewerUrl }, function(tab) {
-      console.log('[Coupang Extension] Opened data viewer in new tab:', tab.id);
-      showStatus('Data viewer opened in new tab', 'success');
     });
   }
   
@@ -1011,14 +911,13 @@ document.addEventListener('DOMContentLoaded', function() {
       position: fixed;
       top: 20px;
       right: 20px;
-      padding: 10px 15px;
-      border-radius: 4px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
       color: white;
-      font-size: 12px;
+      padding: 12px 20px;
+      border-radius: 4px;
       z-index: 10000;
-      max-width: 300px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+      font-size: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     `;
     statusDiv.textContent = message;
     
@@ -1028,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (statusDiv.parentNode) {
         statusDiv.parentNode.removeChild(statusDiv);
       }
-    }, 3000);
+    }, 5000);
   }
   
   // Make table columns resizable
@@ -1065,7 +964,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const newWidth = startWidth + diff;
           const nextTh = th.nextElementSibling;
           
-          if (newWidth > 50 && (!nextTh || nextStartWidth - diff > 50)) {
+          if (newWidth > 80 && (!nextTh || nextStartWidth - diff > 80)) {
             th.style.width = newWidth + 'px';
             if (nextTh) {
               nextTh.style.width = (nextStartWidth - diff) + 'px';
@@ -1081,8 +980,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Clean up when popup is closed
+  // Clean up on page unload
   window.addEventListener('beforeunload', function() {
     stopAutoRefresh();
-      });
-  }); 
+  });
+}); 

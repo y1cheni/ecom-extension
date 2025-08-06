@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <h3>Momo_SPU</h3>
+        
+        <div id="status">Checking page...</div>
+        
+        <div class="controls">
+            <button id="startSearch">Start Search</button>
+            <button id="stopSearch" disabled>Stop Search</button>
+            <button id="analyzeSPU">Analyze SPU</button>
+            <button id="copyResults">Copy Results</button>
+            <button id="clearResults">Clear</button>
+        </div>
+        
+        <div class="results">
+            <div>Products found: <span id="count">0</span></div>
+            <div class="spu-info">Table format, can copy directly to Google Sheets | SPU: 1=New Product, 0=Duplicate Product</div>
+            <textarea id="resultText" readonly></textarea>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html> 
