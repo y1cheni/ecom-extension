@@ -352,10 +352,22 @@
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startProcessing') {
-      urlPosition = request.urlPosition || 0;
-      console.log('[Coupang SKU Counter] Starting processing for position:', urlPosition);
-      processCurrentPage();
-      sendResponse({success: true});
+      // Check if we're in IMG Item mode
+      chrome.storage.local.get(['coupang_img_item_mode'], function(result) {
+        const isImgItemMode = result.coupang_img_item_mode || false;
+        
+        if (isImgItemMode) {
+          console.log('[Coupang SKU Counter] IMG Item mode detected, ignoring SKU processing request');
+          sendResponse({success: false, reason: 'IMG Item mode active'});
+          return;
+        }
+        
+        urlPosition = request.urlPosition || 0;
+        console.log('[Coupang SKU Counter] Starting processing for position:', urlPosition);
+        processCurrentPage();
+        sendResponse({success: true});
+      });
+      return true; // Keep the message channel open for async response
     }
     
     if (request.action === 'getPageInfo') {
@@ -372,8 +384,15 @@
   function initialize() {
     console.log('[Coupang SKU Counter] Initializing...');
     
-    // Get URL position from storage if available
-    chrome.storage.local.get(['coupang_batch_current_index'], function(result) {
+    // Check if we're in IMG Item mode first
+    chrome.storage.local.get(['coupang_img_item_mode', 'coupang_batch_current_index'], function(result) {
+      const isImgItemMode = result.coupang_img_item_mode || false;
+      
+      if (isImgItemMode) {
+        console.log('[Coupang SKU Counter] IMG Item mode detected, SKU counter will not start automatically');
+        return;
+      }
+      
       urlPosition = result.coupang_batch_current_index || 0;
       console.log(`[Coupang SKU Counter] URL position: ${urlPosition}`);
       

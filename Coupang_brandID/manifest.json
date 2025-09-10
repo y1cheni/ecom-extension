@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Coupang 品牌ID抓取器",
+  "version": "1.0.0",
+  "description": "批量抓取Coupang搜尋頁面中品牌名稱與brandID，並輸出去重表格與可複製純文字。",
+  "action": {
+    "default_title": "Coupang 品牌ID抓取器",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://*.coupang.com/*"
+  ]
+}

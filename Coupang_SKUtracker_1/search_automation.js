@@ -1656,8 +1656,23 @@
       return;
     }
     
-    // Check if this is batch processing
-    const isBatchProcessing = await checkBatchProcessing();
+    // Check if we're in IMG Item mode
+    const storage = await new Promise(resolve => {
+      chrome.storage.local.get(['coupang_img_item_mode', 'coupang_batch_processing'], resolve);
+    });
+    
+    const isImgItemMode = storage.coupang_img_item_mode || false;
+    const isBatchProcessing = storage.coupang_batch_processing || false;
+    
+    if (isImgItemMode) {
+      console.log('[Coupang Automation] IMG Item mode detected, automation will be limited to IMG processing only');
+      // In IMG Item mode, we still need to handle batch processing but not SKU counting
+      if (isBatchProcessing) {
+        // Only handle URL navigation, not content processing
+        console.log('[Coupang Automation] IMG Item batch processing mode active');
+      }
+      return;
+    }
     
     if (isBatchProcessing) {
       // Auto start batch processing

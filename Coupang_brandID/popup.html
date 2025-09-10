@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coupang 品牌ID抓取器</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Coupang 品牌ID抓取器</h1>
+    <textarea id="urlInput" placeholder="每行貼上一個搜尋頁網址"></textarea>
+    <div class="btn-row">
+      <button id="startBtn">開始抓取</button>
+      <button id="stopRetryBtn" class="secondary">停止抓取</button>
+      <button id="clearBtn" class="secondary">清空</button>
+      <button id="copyBtn" class="primary">複製表格純文字</button>
+    </div>
+    <div id="status" class="status"></div>
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th>Brand ID</th>
+          <th>品牌名稱</th>
+        </tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

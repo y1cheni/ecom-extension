@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Coupang SKU Tracker",
+  "version": "0.2.0",
+  "description": "Batch scrape in-stock items from Coupang search results with background execution, persistence, and one-click export.",
+  "action": {
+    "default_title": "Coupang SKU Tracker",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.coupang.com/*"
+  ]
+}

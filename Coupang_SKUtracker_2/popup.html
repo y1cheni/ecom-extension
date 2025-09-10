@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Coupang SKU Tracker</title>
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<div class="container">
+		<h2>Coupang SKU Tracker</h2>
+		<label for="inputUrls">Paste search URLs (one per line):</label>
+		<textarea id="inputUrls" placeholder="Paste one search URL per line"></textarea>
+
+		<div class="controls">
+			<button id="startBtn">Start</button>
+			<button id="stopBtn" disabled>Stop</button>
+			<button id="clearBtn">Clear</button>
+			<button id="copyBtn">Copy (TSV)</button>
+			<button id="exportAllBtn">Export All CSV</button>
+			<button id="openWinBtn">Open as window</button>
+		</div>
+
+		<div id="status" class="status">Idle</div>
+		<div id="resultCount" class="result-count">0 items</div>
+
+		<div id="results" class="results"></div>
+	</div>
+	<script src="popup.js" defer></script>
+</body>
+</html>

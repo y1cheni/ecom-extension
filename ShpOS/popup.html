@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ShpOS</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>蝦皮店家擷取</h2>
+      <label for="inputUrls" class="block-label">批量貼上店鋪連結（每行一個）：</label>
+      <textarea id="inputUrls" placeholder="例如：\nhttps://shopee.tw/captaindanny.tw?entryPoint=ShopBySearch&searchKeyword=...\nhttps://shopee.tw/yunxi.herb?entryPoint=ShopBySearch&searchKeyword=..."></textarea>
+      <div class="actions">
+        <button id="parseBtn">解析</button>
+        <button id="clearBtn" class="secondary">清空</button>
+        <button id="copyCsvBtn" class="ghost" disabled>複製 CSV</button>
+        <button id="copyTxtBtn" class="ghost" disabled>複製純文字</button>
+        <button id="copyTableBtn" class="ghost" disabled>複製表格</button>
+      </div>
+      <div id="status" class="status"></div>
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>shop_id</th>
+            <th>shop_name</th>
+            <th>蝦皮連結</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "img matcher",
+  "description": "-",
+  "version": "1.0.0",
+  "action": { 
+    "default_popup": "opencv_popup.html",
+    "default_title": "Advanced Image Matcher"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://api.openai.com https://*.openai.com https:; img-src 'self' data: blob: https:;"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["opencv/*", "models/*", "lib/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

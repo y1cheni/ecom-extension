@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Image Matcher</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      line-height: 1.5;
+      overflow-x: hidden;
+      width: 200px;
+    }
+    
+    .header {
+      background: #ffffff;
+      border-bottom: 1px solid #dee2e6;
+      padding: 16px 24px;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+    }
+    
+    .header p {
+      font-size: 14px;
+      color: #6c757d;
+      margin: 4px 0 0 0;
+    }
+    
+    .container {
+      padding: 24px;
+    }
+    
+    .section {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    
+    .section-header {
+      background: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      padding: 16px 20px;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+    }
+    
+    .section-content {
+      padding: 20px;
+    }
+    
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+    
+    .input-textarea {
+      width: 100%;
+      height: 140px;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+      resize: vertical;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .input-textarea:focus {
+      outline: none;
+      border-color: #495057;
+      box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.1);
+    }
+    
+    .input-textarea::placeholder {
+      color: #6c757d;
+      font-size: 12px;
+    }
+    
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .config-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .config-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 6px;
+    }
+    
+    .config-input {
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 13px;
+      transition: border-color 0.15s ease-in-out;
+    }
+    
+    .config-input:focus {
+      outline: none;
+      border-color: #495057;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: #495057;
+      color: #ffffff;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #343a40;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: #ffffff;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #5a6268;
+    }
+    
+    .btn:disabled {
+      background: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+    
+    .status-indicator {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    .status-loading {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .status-ready {
+      background: #d1edff;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .progress-container {
+      display: none;
+      margin: 16px 0;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #495057;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+    
+    .results-section {
+      display: none;
+    }
+    
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      text-align: center;
+      padding: 16px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .stat-number.success { color: #28a745; }
+    .stat-number.danger { color: #dc3545; }
+    .stat-number.warning { color: #ffc107; }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    
+    .result-card {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .result-card.matched {
+      border-left: 4px solid #28a745;
+    }
+    
+    .result-card.unmatched {
+      border-left: 4px solid #dc3545;
+    }
+    
+    .result-card.error {
+      border-left: 4px solid #ffc107;
+    }
+    
+    .result-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    
+    .result-title.matched { color: #28a745; }
+    .result-title.unmatched { color: #dc3545; }
+    .result-title.error { color: #ffc107; }
+    
+    .result-details {
+      font-size: 12px;
+      color: #6c757d;
+      line-height: 1.4;
+    }
+    
+    .log-container {
+      background: #212529;
+      color: #f8f9fa;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-top: 16px;
+    }
+    
+    .save-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      background: #28a745;
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .save-status.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Image Matcher</h1>
+    <p>Advanced AI-powered image matching for product comparison</p>
+  </div>
+  
+  <div class="container">
+    <!-- Status Section -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">System Status</h2>
+      </div>
+      <div class="section-content">
+        <div id="opencv-status" class="status-indicator status-loading">
+          Loading OpenCV.js...
+        </div>
+      </div>
+    </div>
+    
+    <!-- Input Section -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Image URLs Input</h2>
+      </div>
+      <div class="section-content">
+        <div class="input-grid">
+          <div class="input-group">
+            <label class="input-label">Group A Images (Source)</label>
+            <textarea 
+              id="colA" 
+              class="input-textarea" 
+              placeholder="Enter Group A image URLs, one per line...&#10;Example:&#10;https://example.com/product1.jpg&#10;https://example.com/product2.jpg"
+            ></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Group B Images (Target)</label>
+            <textarea 
+              id="colB" 
+              class="input-textarea" 
+              placeholder="Enter Group B image URLs, one per line...&#10;Example:&#10;https://example.com/catalog1.jpg&#10;https://example.com/catalog2.jpg"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Configuration Section -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Matching Parameters</h2>
+      </div>
+      <div class="section-content">
+        <div class="config-grid">
+          <div class="config-item">
+            <label class="config-label">Hash Distance Threshold</label>
+            <input id="tauHash" type="number" class="config-input" step="1" value="12" min="1" max="64">
+          </div>
+          <div class="config-item">
+            <label class="config-label">Template Match Score</label>
+            <input id="tauTM" type="number" class="config-input" step="0.01" value="0.78" min="0" max="1">
+          </div>
+          <div class="config-item">
+            <label class="config-label">Scale Ratios</label>
+            <input id="scales" class="config-input" value="0.3,0.5,0.75,1,1.25,1.5,2.0">
+          </div>
+        </div>
+        
+        <div class="button-group">
+          <button id="run" class="btn btn-primary" disabled>
+            Start Matching
+          </button>
+          <button id="clear" class="btn btn-secondary">
+            Clear All
+          </button>
+          <button id="save" class="btn btn-secondary">
+            Save Data
+          </button>
+          <button id="load" class="btn btn-secondary">
+            Load Data
+          </button>
+          <button id="openWindow" class="btn btn-secondary">
+            Open Window
+          </button>
+        </div>
+        
+        <div class="progress-container" id="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-text" id="progress-text">Initializing...</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="section results-section" id="results-section">
+      <div class="section-header">
+        <h2 class="section-title">Matching Results</h2>
+      </div>
+      <div class="section-content">
+        <div class="results-stats" id="results-stats">
+          <div class="stat-card">
+            <div class="stat-number success" id="matched-count">0</div>
+            <div class="stat-label">Matched</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number danger" id="unmatched-count">0</div>
+            <div class="stat-label">Unmatched</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number warning" id="error-count">0</div>
+            <div class="stat-label">Errors</div>
+          </div>
+        </div>
+        
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+    </div>
+    
+    <!-- Log Section -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Processing Log</h2>
+      </div>
+      <div class="section-content">
+        <div id="log" class="log-container"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="save-status" class="save-status">
+    Data saved successfully
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

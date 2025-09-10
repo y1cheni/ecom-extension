@@ -1,0 +1,18 @@
+Sample URLs for testing the Shopee Mall Crawler:
+
+https://shopee.tw/mall/search?keyword=KOIKEYA%20%E6%B9%96%E6%B1%A0%E5%B1%8B&page=0&shop=6440668
+https://shopee.tw/mall/search?keyword=Naeiae&page=0&shop=21507356
+https://shopee.tw/mall/search?keyword=Naeiae&page=0&shop=28773971
+https://shopee.tw/mall/search?keyword=TAO%20KAE%20NOI&page=0&shop=50662979
+
+Instructions:
+1. Copy these URLs one by one into the extension popup
+2. Click "Start Crawling" button
+3. Wait for the crawling process to complete
+4. Export CSV when finished
+
+Expected behavior:
+- Auto-refresh data every second
+- English interface with black/white/gray styling
+- Automatic pagination until no products found
+- Real-time data saving and CSV export capability

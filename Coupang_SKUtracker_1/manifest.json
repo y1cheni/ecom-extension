@@ -14,7 +14,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.tw.coupang.com/search*", "https://www.tw.coupang.com/*"],
-      "js": ["search_automation.js"],
+      "js": ["search_automation.js", "img_item_processor.js"],
       "run_at": "document_idle"
     }
   ],

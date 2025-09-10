@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Mall Search Crawler",
+  "version": "1.0.0",
+  "description": "Chrome extension for batch crawling Shopee mall search results",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://shopee.tw/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Shopee Mall Crawler"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://shopee.tw/mall/search*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

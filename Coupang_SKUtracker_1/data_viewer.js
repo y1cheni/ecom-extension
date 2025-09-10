@@ -3,11 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('[Coupang Extension] Data Viewer loaded');
   
   let autoRefreshInterval;
+  let isImgItemMode = false; // Global flag for IMG Item mode
   
   // Initialize the data viewer
   initialize();
   
   // Button event listeners
+  document.getElementById('imgItemBtn').addEventListener('click', toggleImgItemMode);
   document.getElementById('clearDataBtn').addEventListener('click', clearDeliveryData);
   document.getElementById('exportCsvBtn').addEventListener('click', exportDeliveryData);
   document.getElementById('copyDataBtn').addEventListener('click', copyDeliveryData);
@@ -17,6 +19,13 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize function
   function initialize() {
+    // Load IMG Item mode state
+    chrome.storage.local.get(['coupang_img_item_mode'], function(result) {
+      isImgItemMode = result.coupang_img_item_mode || false;
+      updateImgItemButton();
+      updateUIForImgItemMode(isImgItemMode);
+    });
+    
     // Load data immediately
     loadDeliveryData();
     
@@ -61,21 +70,33 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load delivery data
   function loadDeliveryData() {
-    chrome.storage.local.get(['coupang_delivery_data'], function(result) {
-      const data = result.coupang_delivery_data || [];
-      console.log('[Coupang Extension] Data Viewer loaded delivery data:', data);
-      console.log('[Coupang Extension] Data Viewer total data entries:', data.length);
-      
-      // Debug: Show data breakdown by status
-      const statusBreakdown = {};
-      data.forEach(item => {
-        const status = item.isCompleted ? 'Completed' : 'Processing';
-        statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+    if (isImgItemMode) {
+      // Load IMG item data
+      chrome.storage.local.get(['coupang_img_item_data'], function(result) {
+        const data = result.coupang_img_item_data || [];
+        console.log('[Coupang Extension] Data Viewer loaded IMG item data:', data);
+        console.log('[Coupang Extension] Data Viewer total IMG item entries:', data.length);
+        
+        displayImgItemData(data);
       });
-      console.log('[Coupang Extension] Data Viewer breakdown by status:', statusBreakdown);
-      
-      displayDeliveryData(data);
-    });
+    } else {
+      // Load normal delivery data
+      chrome.storage.local.get(['coupang_delivery_data'], function(result) {
+        const data = result.coupang_delivery_data || [];
+        console.log('[Coupang Extension] Data Viewer loaded delivery data:', data);
+        console.log('[Coupang Extension] Data Viewer total data entries:', data.length);
+        
+        // Debug: Show data breakdown by status
+        const statusBreakdown = {};
+        data.forEach(item => {
+          const status = item.isCompleted ? 'Completed' : 'Processing';
+          statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+        });
+        console.log('[Coupang Extension] Data Viewer breakdown by status:', statusBreakdown);
+        
+        displayDeliveryData(data);
+      });
+    }
   }
   
   // Display delivery data
@@ -275,13 +296,87 @@ document.addEventListener('DOMContentLoaded', function() {
       document.title = `Coupang SKU Counter - Data Viewer (${displayRows.length} items)`;
     });
   }
+
+  // Display IMG Item data
+  function displayImgItemData(data) {
+    const container = document.getElementById('dataContainer');
+    
+    if (data.length === 0) {
+      container.innerHTML = '<div class="empty-state">No IMG item data available</div>';
+      return;
+    }
+
+    console.log('[Coupang Extension] Data Viewer processing IMG item data for display...');
+    
+    // Create table for IMG item data with 4 columns
+    let tableHtml = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Brand</th>
+            <th>Product Name</th>
+            <th>Image URL</th>
+            <th>Item URL</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    // Sort data by URL position and page
+    const sortedData = data.sort((a, b) => {
+      if (a.urlPosition !== b.urlPosition) {
+        return a.urlPosition - b.urlPosition;
+      }
+      return a.page - b.page;
+    });
+
+    sortedData.forEach(item => {
+      const brand = item.brand || 'Unknown Brand';
+      const productName = item.name || 'Unknown Product';
+      const imageUrl = item.imageUrl || '';
+      const itemUrl = item.itemUrl || '';
+      
+      // Truncate long URLs for display
+      const displayImageUrl = imageUrl.length > 60 ? imageUrl.substring(0, 60) + '...' : imageUrl;
+      const displayItemUrl = itemUrl.length > 60 ? itemUrl.substring(0, 60) + '...' : itemUrl;
+      
+      tableHtml += `
+        <tr>
+          <td title="${brand}">${brand}</td>
+          <td title="${productName}">${productName}</td>
+          <td title="${imageUrl}">
+            <a href="${imageUrl}" target="_blank">${displayImageUrl}</a>
+          </td>
+          <td title="${itemUrl}">
+            <a href="${itemUrl}" target="_blank">${displayItemUrl}</a>
+          </td>
+        </tr>
+      `;
+    });
+    
+    tableHtml += `
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = tableHtml;
+    
+    // Add column resizing functionality
+    makeTableColumnsResizable();
+    
+    // Update document title with current data count
+    document.title = `Coupang SKU Counter - IMG Item Viewer (${sortedData.length} items)`;
+  }
   
   // Clear delivery data
   function clearDeliveryData() {
-    if (confirm('Are you sure you want to clear all delivery data?')) {
-      chrome.storage.local.remove(['coupang_delivery_data'], function() {
-        console.log('[Coupang Extension] Data Viewer cleared all delivery data');
-        showStatus('All delivery data cleared', 'success');
+    const dataType = isImgItemMode ? 'IMG item data' : 'delivery data';
+    const storageKey = isImgItemMode ? 'coupang_img_item_data' : 'coupang_delivery_data';
+    
+    if (confirm(`Are you sure you want to clear all ${dataType}?`)) {
+      chrome.storage.local.remove([storageKey], function() {
+        console.log(`[Coupang Extension] Data Viewer cleared all ${dataType}`);
+        showStatus(`All ${dataType} cleared`, 'success');
         loadDeliveryData();
       });
     }
@@ -289,6 +384,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Export delivery data to CSV
   function exportDeliveryData() {
+    if (isImgItemMode) {
+      exportImgItemData();
+      return;
+    }
+    
     chrome.storage.local.get(['coupang_delivery_data'], function(result) {
       const data = result.coupang_delivery_data || [];
       
@@ -450,6 +550,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Copy delivery data to clipboard
   function copyDeliveryData() {
+    if (isImgItemMode) {
+      copyImgItemData();
+      return;
+    }
+    
     chrome.storage.local.get(['coupang_delivery_data'], function(result) {
       const data = result.coupang_delivery_data || [];
       
@@ -651,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Fix brand encoding in URL
+  // Fix brand encoding in URL - decode Chinese characters properly
   function fixBrandEncodingInUrl(url) {
     if (url === '0' || !url.includes('q=')) {
       return url;
@@ -662,9 +767,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const query = urlObj.searchParams.get('q');
       
       if (query) {
-        // Re-encode the query to ensure proper encoding
-        const fixedQuery = encodeURIComponent(decodeURIComponent(query));
-        urlObj.searchParams.set('q', fixedQuery);
+        // Decode the query to get Chinese characters
+        const decodedQuery = decodeURIComponent(query);
+        console.log(`[Coupang Extension] Data Viewer decoded query: "${query}" -> "${decodedQuery}"`);
+        
+        // Set the decoded query directly (browser will handle encoding when needed)
+        urlObj.searchParams.set('q', decodedQuery);
         const fixedUrl = urlObj.toString();
         
         if (fixedUrl !== url) {
@@ -772,30 +880,40 @@ document.addEventListener('DOMContentLoaded', function() {
       'coupang_batch_current_url': firstValidUrl
     };
     
-    // Only clear data if explicitly requested (for new batch processing)
-    if (clearExistingData) {
-      batchSettings['coupang_delivery_data'] = []; // Clear old SKU count data only for new batches
-    }
+          // Only clear data if explicitly requested (for new batch processing)
+      if (clearExistingData) {
+        if (isImgItemMode) {
+          batchSettings['coupang_img_item_data'] = []; // Clear old IMG item data
+        } else {
+          batchSettings['coupang_delivery_data'] = []; // Clear old SKU count data only for new batches
+        }
+      }
+      
+      // Always set the current mode
+      batchSettings['coupang_img_item_mode'] = isImgItemMode;
     
     chrome.storage.local.set(batchSettings, function() {
-      console.log('[Coupang Extension] Data Viewer SKU batch processing started with URLs:', urls);
-      console.log('[Coupang Extension] Data Viewer starting SKU counting with first valid URL:', firstValidUrl, 'at index:', firstValidIndex);
+      const processingType = isImgItemMode ? 'IMG item' : 'SKU';
+      console.log(`[Coupang Extension] Data Viewer ${processingType} batch processing started with URLs:`, urls);
+      console.log(`[Coupang Extension] Data Viewer starting ${processingType} processing with first valid URL:`, firstValidUrl, 'at index:', firstValidIndex);
       console.log('[Coupang Extension] Data Viewer original batch URLs saved for order preservation:', urls);
       
-      // Open first valid URL for SKU counting
+      // Open first valid URL for processing
       chrome.tabs.create({ url: firstValidUrl }, function(tab) {
-        showStatus(`Starting SKU batch processing: ${urls.length} URLs`, 'success');
+        const processingType = isImgItemMode ? 'IMG item' : 'SKU';
+        showStatus(`Starting ${processingType} batch processing: ${urls.length} URLs`, 'success');
         
-        // Send message to start SKU counting after page loads
+        // Send message to start processing after page loads
         setTimeout(() => {
+          const messageAction = isImgItemMode ? 'startImgItemProcessing' : 'startProcessing';
           chrome.tabs.sendMessage(tab.id, { 
-            action: 'startProcessing',
+            action: messageAction,
             urlPosition: firstValidIndex
           }, function(response) {
             if (chrome.runtime.lastError) {
-              console.log('[Coupang Extension] Data Viewer failed to start SKU counting:', chrome.runtime.lastError);
+              console.log(`[Coupang Extension] Data Viewer failed to start ${isImgItemMode ? 'IMG item' : 'SKU'} processing:`, chrome.runtime.lastError);
             } else {
-              console.log('[Coupang Extension] Data Viewer SKU counting started successfully:', response);
+              console.log(`[Coupang Extension] Data Viewer ${isImgItemMode ? 'IMG item' : 'SKU'} processing started successfully:`, response);
             }
           });
         }, 4000); // Wait for page to fully load
@@ -980,6 +1098,153 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
+  // Toggle IMG Item mode
+  function toggleImgItemMode() {
+    // Temporarily stop auto refresh during mode switch
+    stopAutoRefresh();
+    
+    chrome.storage.local.get(['coupang_img_item_mode'], function(result) {
+      const currentMode = result.coupang_img_item_mode || false;
+      const newMode = !currentMode;
+      
+      chrome.storage.local.set({ 'coupang_img_item_mode': newMode }, function() {
+        isImgItemMode = newMode;
+        updateImgItemButton();
+        
+        if (newMode) {
+          showStatus('IMG Item 模式已開啟', 'success');
+          updateUIForImgItemMode(true);
+        } else {
+          showStatus('IMG Item 模式已關閉', 'success');
+          updateUIForImgItemMode(false);
+        }
+        
+        // Immediately load data for the new mode
+        loadDeliveryData();
+        
+        // Restart auto refresh after a short delay
+        setTimeout(() => {
+          startAutoRefresh();
+        }, 500);
+      });
+    });
+  }
+
+  // Update IMG Item button appearance
+  function updateImgItemButton() {
+    const imgItemBtn = document.getElementById('imgItemBtn');
+    if (isImgItemMode) {
+      imgItemBtn.classList.remove('btn-secondary');
+      imgItemBtn.classList.add('btn-primary');
+      imgItemBtn.textContent = 'IMG Item (ON)';
+    } else {
+      imgItemBtn.classList.remove('btn-primary');
+      imgItemBtn.classList.add('btn-secondary');
+      imgItemBtn.textContent = 'IMG Item';
+    }
+  }
+
+  // Update UI for IMG Item mode
+  function updateUIForImgItemMode(enabled) {
+    const batchSection = document.querySelector('.batch-section h3');
+    const batchInfo = document.querySelector('.batch-info');
+    
+    if (enabled) {
+      batchSection.textContent = 'IMG Item Processing';
+      batchInfo.textContent = 'Enter search URLs to extract product images and names.';
+    } else {
+      batchSection.textContent = 'Batch Processing';
+      batchInfo.textContent = 'Enter brand search URLs (one per line).';
+    }
+  }
+
+  // Export IMG Item data as CSV
+  function exportImgItemData() {
+    chrome.storage.local.get(['coupang_img_item_data'], function(result) {
+      const data = result.coupang_img_item_data || [];
+      
+      if (data.length === 0) {
+        showStatus('No IMG item data to export', 'error');
+        return;
+      }
+      
+      console.log('[Coupang Extension] Data Viewer exporting IMG item data:', data.length, 'items');
+      
+      // Sort data by URL position and page
+      const sortedData = data.sort((a, b) => {
+        if (a.urlPosition !== b.urlPosition) {
+          return a.urlPosition - b.urlPosition;
+        }
+        return a.page - b.page;
+      });
+      
+      // Create CSV content with 4 columns
+      let csvContent = 'Brand,Product Name,Image URL,Item URL\n';
+      sortedData.forEach(item => {
+        const brand = (item.brand || 'Unknown Brand').replace(/"/g, '""');
+        const productName = (item.name || 'Unknown Product').replace(/"/g, '""');
+        const imageUrl = (item.imageUrl || '').replace(/"/g, '""');
+        const itemUrl = (item.itemUrl || '').replace(/"/g, '""');
+        
+        csvContent += `"${brand}","${productName}","${imageUrl}","${itemUrl}"\n`;
+      });
+      
+      // Download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `coupang_img_item_data_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showStatus(`IMG item CSV exported successfully (${sortedData.length} items)`, 'success');
+    });
+  }
+
+  // Copy IMG Item data to clipboard
+  function copyImgItemData() {
+    chrome.storage.local.get(['coupang_img_item_data'], function(result) {
+      const data = result.coupang_img_item_data || [];
+      
+      if (data.length === 0) {
+        showStatus('No IMG item data to copy', 'error');
+        return;
+      }
+      
+      console.log('[Coupang Extension] Data Viewer copying IMG item data:', data.length, 'items');
+      
+      // Sort data by URL position and page
+      const sortedData = data.sort((a, b) => {
+        if (a.urlPosition !== b.urlPosition) {
+          return a.urlPosition - b.urlPosition;
+        }
+        return a.page - b.page;
+      });
+      
+      // Create text content with 4 columns
+      let textContent = 'Brand\tProduct Name\tImage URL\tItem URL\n';
+      sortedData.forEach(item => {
+        const brand = item.brand || 'Unknown Brand';
+        const productName = item.name || 'Unknown Product';
+        const imageUrl = item.imageUrl || '';
+        const itemUrl = item.itemUrl || '';
+        
+        textContent += `${brand}\t${productName}\t${imageUrl}\t${itemUrl}\n`;
+      });
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(textContent).then(() => {
+        showStatus(`IMG item data copied to clipboard (${sortedData.length} items)`, 'success');
+      }).catch(err => {
+        console.error('[Coupang Extension] Data Viewer copy failed:', err);
+        showStatus('Copy failed', 'error');
+      });
+    });
+  }
+
   // Clean up on page unload
   window.addEventListener('beforeunload', function() {
     stopAutoRefresh();

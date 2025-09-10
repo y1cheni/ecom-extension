@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Shopee Mall Crawler</h1>
+        
+        <div class="section">
+            <div class="mode-switch">
+                <label>模式選擇:</label>
+                <div class="mode-buttons">
+                    <button id="mallModeBtn" class="btn btn-mode active" data-mode="mall">商城搜索</button>
+                    <button id="flagshipModeBtn" class="btn btn-mode" data-mode="flagship">特選商城旗艦店</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <label for="urlInput" id="urlInputLabel">Batch URL Input:</label>
+            <textarea id="urlInput" placeholder="Paste Shopee mall search URLs, one per line..." rows="8"></textarea>
+        </div>
+
+        <div class="section">
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary">Start Crawling</button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>Stop</button>
+                <button id="clearBtn" class="btn btn-danger">Clear Data</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="status">
+                <div class="status-item">
+                    <span>Status:</span>
+                    <span id="status">Idle</span>
+                </div>
+                <div class="status-item">
+                    <span>Progress:</span>
+                    <span id="progress">0/0</span>
+                </div>
+                <div class="status-item">
+                    <span>Products Crawled:</span>
+                    <span id="productCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Crawled Data:</h3>
+            <div class="data-preview" id="dataPreview">
+                <p>No data available</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="button-group">
+                <button id="exportBtn" class="btn btn-success">Export CSV</button>
+                <button id="refreshBtn" class="btn btn-secondary">Refresh Data</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="help" id="helpSection">
+                <h4>Instructions:</h4>
+                <div id="mallModeHelp">
+                    <ul>
+                        <li>Paste Shopee mall search URLs in the text box, one per line</li>
+                        <li>URL格式: https://shopee.tw/mall/search?keyword=品牌&shop=店鋪ID</li>
+                        <li>Click "Start Crawling" to process each URL in sequence</li>
+                        <li>Auto-pagination continues until no more products found</li>
+                        <li>Data is saved in real-time, won't be lost when closing extension</li>
+                        <li>Export as CSV file when completed</li>
+                    </ul>
+                </div>
+                <div id="flagshipModeHelp" style="display: none;">
+                    <ul>
+                        <li>Paste Shopee search URLs in the text box, one per line</li>
+                        <li>URL格式: https://shopee.tw/search?keyword=產品關鍵字&page=0</li>
+                        <li>系統會抓取: Item_url, Img, Item, Tag, Shop_id等欄位</li>
+                        <li>Auto-pagination continues until no more products found</li>
+                        <li>Data is saved in real-time, won't be lost when closing extension</li>
+                        <li>Export as CSV file when completed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

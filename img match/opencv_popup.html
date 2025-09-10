@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Image Matcher</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      line-height: 1.5;
+    }
+    
+    .header {
+      background: #ffffff;
+      border-bottom: 1px solid #dee2e6;
+      padding: 16px 24px;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+    }
+    
+    .header p {
+      font-size: 14px;
+      color: #6c757d;
+      margin: 4px 0 0 0;
+    }
+    
+    .container {
+      padding: 24px;
+    }
+    
+    .section {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    
+    .section-header {
+      background: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      padding: 16px 20px;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+    }
+    
+    .section-content {
+      padding: 20px;
+    }
+    
+
+    
+
+    
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+    
+    .input-textarea {
+      width: 100%;
+      height: 140px;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+      resize: vertical;
+      transition: border-color 0.15s ease-in-out;
+    }
+    
+    .input-textarea:focus {
+      outline: none;
+      border-color: #495057;
+      box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.1);
+    }
+    
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .config-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .config-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 6px;
+    }
+    
+    .config-input {
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    .config-input:focus {
+      outline: none;
+      border-color: #495057;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    
+    .btn-primary {
+      background: #495057;
+      color: #ffffff;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #343a40;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: #ffffff;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #5a6268;
+    }
+    
+    .btn:disabled {
+      background: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+    
+    .status-indicator {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    .status-loading {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .status-ready {
+      background: #d1edff;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .progress-container {
+      display: none;
+      margin: 16px 0;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #495057;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+    
+    .results-section {
+      display: none;
+    }
+    
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      text-align: center;
+      padding: 16px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .stat-number.success { color: #28a745; }
+    .stat-number.danger { color: #dc3545; }
+    .stat-number.warning { color: #ffc107; }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    
+    .result-card {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .result-card.matched {
+      border-left: 4px solid #28a745;
+    }
+    
+    .result-card.unmatched {
+      border-left: 4px solid #dc3545;
+    }
+    
+    .result-card.error {
+      border-left: 4px solid #ffc107;
+    }
+    
+    .result-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    
+    .result-title.matched { color: #28a745; }
+    .result-title.unmatched { color: #dc3545; }
+    .result-title.error { color: #ffc107; }
+    
+    .result-details {
+      font-size: 12px;
+      color: #6c757d;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+    
+    .log-container {
+      background: #212529;
+      color: #f8f9fa;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    
+    .save-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      background: #28a745;
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .save-status.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+    <div class="section" style="border:none; background:transparent; box-shadow:none;">
+      <div class="section-content" style="padding:8px;">
+        <button id="openWindow" class="btn btn-primary" style="padding:10px 16px; font-size:14px;">Open Window</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="open_window_popup.js"></script>
+</body>
+</html>
